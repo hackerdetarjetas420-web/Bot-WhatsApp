@@ -28,6 +28,7 @@ const DEFAULTS = {
   scheduledMessage: '📢 Aviso del grupo: mantengamos el orden y respetemos las reglas.',
   enabled: true, blockedWords: [], blockLinks: true, maxMessagesPerWindow: 6, windowSeconds: 10,
   warningsBeforeKick: 1, adminNumbers: [], profileStatus: '', binCommandEnabled: true,
+  telegramBridgeEnabled: false, telegramGroupJid: '',
   defaultCountryCode: '52', broadcastMessage: 'Hola {nombre} 👋',
   broadcastDailyLimit: 30, broadcastMinDelaySec: 60, broadcastMaxDelaySec: 120
 };
@@ -254,6 +255,15 @@ class Session {
     if (!reply || !this.isConnected) return;
     await this.sock.sendMessage(jid, { text: reply }, { quoted: m });
     this.log('Respondí .bin en ' + (this.groupList.find(g => g.id === jid)?.subject || jid.split('@')[0]) + '.');
+  }
+
+  // ---- puente de Telegram ----
+  async forwardTelegram(text) {
+    if (!this.isConnected || !this.rentalOk) return;
+    const jid = this.config.telegramGroupJid;
+    if (!jid || !jid.endsWith('@g.us')) return;
+    await this.sock.sendMessage(jid, { text: String(text) });
+    this.log('Mensaje de Telegram reenviado al grupo.');
   }
 
   // ---- avisos programados (lo llama un reloj global cada minuto) ----
