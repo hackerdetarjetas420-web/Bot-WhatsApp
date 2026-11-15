@@ -1,0 +1,19 @@
+{
+  "name": "whatsapp-multi-bot",
+  "version": "1.0.0",
+  "description": "Bot de WhatsApp multi-número con panel: grupos, avisos, moderación, mensajes a contactos y rentas con vencimiento",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "6.7.24",
+    "express": "^4.21.2",
+    "pino": "^9.6.0",
+    "qrcode": "^1.5.4"
+  },
+  "private": true
+}
