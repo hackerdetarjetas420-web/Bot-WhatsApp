@@ -4,6 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { Session, DAY } = require('./session');
 const { initBinCache } = require('./bin');
+const { startTelegramBridge } = require('./telegram');
 
 // Un error suelto de WhatsApp (p. ej. "Connection Closed") ya no tumba todo el servidor.
 process.on('unhandledRejection', e => console.error('[Multi Bot] Error no controlado:', e?.message || e));
@@ -63,6 +64,13 @@ for (const id of fs.readdirSync(SESS_DIR)) {
 }
 // Arranca las conexiones de una en una para no saturar al iniciar.
 (async () => { for (const s of sessions.values()) { s.connect(); await new Promise(r => setTimeout(r, 2500)); } })();
+
+// Puente de Telegram → WhatsApp: reenvía a los números que lo tengan activado.
+startTelegramBridge(async ({ text }) => {
+  const targets = [...sessions.values()].filter(s => s.config.telegramBridgeEnabled && s.isConnected && s.rentalOk && s.config.telegramGroupJid);
+  if (!targets.length) return;
+  for (const s of targets) { try { await s.forwardTelegram(text); } catch (e) { s.log('Error al reenviar de Telegram: ' + e.message); } }
+});
 
 // Reloj global: avisos programados y vencimientos de renta.
 setInterval(() => {
@@ -237,6 +245,15 @@ app.get('/s/:id', (req, res) => {
     <label>Intervalo de avisos (minutos)</label><input name="intervalMinutes" type="number" min="1" value="${c.intervalMinutes}">
     <label>Mensaje automático</label><textarea name="scheduledMessage" rows="3">${esc(c.scheduledMessage)}</textarea>
   </section>
+  <section><h2>Puente de Telegram</h2>
+    <p><small>Reenvía a un grupo de WhatsApp los mensajes que llegan a tu canal de Telegram.</small></p>
+    <label>Grupo de WhatsApp donde se reenvían</label>
+    <select name="telegramGroupJid" style="width:100%;padding:12px 14px;margin:7px 0 14px;background:#090909;color:var(--text);border:1px solid #39332A;border-radius:11px;font:inherit;">
+      <option value="">— Ninguno —</option>
+      ${s.groupList.map(g => `<option value="${esc(g.id)}" ${c.telegramGroupJid === g.id ? 'selected' : ''}>${esc(g.subject)}</option>`).join('')}
+    </select>
+    <label class="chk"><input type="checkbox" name="telegramBridgeEnabled" ${c.telegramBridgeEnabled ? 'checked' : ''}> Reenviar los mensajes de Telegram a ese grupo</label>
+  </section>
   <section><h2>Moderación</h2>
     <label>Palabras prohibidas (separadas por coma)</label><input name="blockedWords" value="${esc(c.blockedWords.join(', '))}">
     <label class="chk"><input type="checkbox" name="blockLinks" ${c.blockLinks ? 'checked' : ''}> Bloquear enlaces</label>
@@ -321,6 +338,8 @@ app.post('/s/:id/save', (req, res) => {
   c.adminNumbers = String(b.adminNumbers || '').split(',').map(x => digits(x)).filter(Boolean);
   c.enabled = b.enabled === 'on';
   c.binCommandEnabled = b.binCommandEnabled === 'on';
+  c.telegramBridgeEnabled = b.telegramBridgeEnabled === 'on';
+  c.telegramGroupJid = String(b.telegramGroupJid || '').endsWith('@g.us') ? String(b.telegramGroupJid) : '';
   s.save(); s.log('Configuración guardada.');
   res.redirect('/s/' + s.id);
 });
