@@ -13,6 +13,7 @@ const { handleBinCommand } = require('./bin');
 const DAY = 24 * 60 * 60 * 1000;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const digits = s => String(s || '').replace(/\D/g, '');
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const today = () => new Date().toLocaleDateString('es-MX', { timeZone: 'America/Cancun' });
 let cachedVersion = null;
 async function waVersion() {
@@ -29,6 +30,9 @@ const DEFAULTS = {
   enabled: true, blockedWords: [], blockLinks: true, maxMessagesPerWindow: 6, windowSeconds: 10,
   warningsBeforeKick: 1, adminNumbers: [], profileStatus: '', binCommandEnabled: true,
   telegramBridgeEnabled: false, telegramGroupJid: '',
+  autoReplyEnabled: false, autoReplyCooldownMin: 360,
+  autoReplyWelcome: '👋 ¡Hola! Gracias por escribir. En un momento te atendemos. Cuéntanos en qué podemos ayudarte.',
+  autoReplyRules: [],
   defaultCountryCode: '52', broadcastMessage: 'Hola {nombre} 👋',
   broadcastDailyLimit: 30, broadcastMinDelaySec: 60, broadcastMaxDelaySec: 120
 };
@@ -51,6 +55,7 @@ class Session {
     this.registered = false; this.lastError = ''; this.needsRelink = false;
     this.connecting = false; this.retryTimer = null; this.retries = 0; this.stopped = false;
     this.groupList = []; this.recent = new Map(); this.warnings = new Map(); this.logs = [];
+    this.greeted = new Map(); this.lastAuto = new Map();
     this.lastSent = Date.now(); this.sendingAvisos = false; this.bcRunning = false;
   }
 
@@ -135,6 +140,7 @@ class Session {
         if (this.sock !== socket || type !== 'notify') return;
         for (const m of messages) {
           await this.handleBin(m).catch(e => this.log('Error en .bin: ' + e.message));
+          await this.autoReply(m).catch(e => this.log('Error en respuesta automática: ' + e.message));
           await this.moderate(m).catch(e => this.log('Error de moderación: ' + e.message));
         }
       });
@@ -255,6 +261,31 @@ class Session {
     if (!reply || !this.isConnected) return;
     await this.sock.sendMessage(jid, { text: reply }, { quoted: m });
     this.log('Respondí .bin en ' + (this.groupList.find(g => g.id === jid)?.subject || jid.split('@')[0]) + '.');
+  }
+
+  // ---- respuestas automáticas (atención a clientes en privado) ----
+  async autoReply(m) {
+    const c = this.config;
+    const jid = m.key.remoteJid;
+    if (!this.rentalOk || !c.autoReplyEnabled || !jid || m.key.fromMe) return;
+    if (!jid.endsWith('@s.whatsapp.net')) return;            // solo chats privados, no grupos ni estados
+    const text = this.getText(m).trim();
+    if (!text || /^\s*[.!/]bin\b/i.test(text)) return;       // .bin lo atiende su propia función
+    const now = Date.now();
+    if (now - (this.lastAuto.get(jid) || 0) < 5000) return;  // anti-rebote: máx. 1 cada 5 s por contacto
+    const low = norm(text);
+    const rule = (c.autoReplyRules || []).find(r => r.match &&
+      String(r.match).split(/[,|]/).map(t => norm(t.trim())).filter(Boolean).some(t => low.includes(t)));
+    let reply = null;
+    if (rule) reply = rule.reply;
+    else {
+      const cd = Math.max(0, Number(c.autoReplyCooldownMin) || 0) * 60000;
+      if (now - (this.greeted.get(jid) || 0) >= cd) { reply = c.autoReplyWelcome; this.greeted.set(jid, now); }
+    }
+    if (!reply || !this.isConnected) return;
+    this.lastAuto.set(jid, now);
+    await this.sock.sendMessage(jid, { text: String(reply) });
+    this.log('Respuesta automática enviada a ' + jid.split('@')[0] + '.');
   }
 
   // ---- puente de Telegram ----
