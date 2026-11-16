@@ -32,7 +32,7 @@ const DEFAULTS = {
   telegramBridgeEnabled: false, telegramGroupJid: '',
   autoReplyEnabled: false, autoReplyCooldownMin: 360,
   autoReplyWelcome: '👋 ¡Hola! Gracias por escribir. En un momento te atendemos. Cuéntanos en qué podemos ayudarte.',
-  autoReplyMedia: '📎 ¡Gracias por tu mensaje! Ya lo recibí. Dame un momentito y te respondo enseguida. 🙌',
+  autoReplyMedia: '📎 ¡Gracias por tu {tipo}! Para atenderte mejor, ¿me lo escribes en un mensajito? Así te respondo volando 🙌',
   autoReplyRules: [],
   defaultCountryCode: '52', broadcastMessage: 'Hola {nombre} 👋',
   broadcastDailyLimit: 30, broadcastMinDelaySec: 60, broadcastMaxDelaySec: 120
@@ -313,6 +313,8 @@ class Session {
       const opts = reply.split('||').map(x => x.trim()).filter(Boolean);
       if (opts.length) reply = opts[Math.floor(Math.random() * opts.length)];
     }
+    const tipo = kind === 'imagen' ? 'foto' : (kind || 'mensaje');
+    reply = reply.replace(/\{tipo\}/gi, tipo);
     this.lastAuto.set(jid, now);
     await this.sock.sendMessage(jid, { text: String(reply) });
     this.log('Respuesta automática enviada a ' + jid.split('@')[0] + '.');
@@ -407,3 +409,4 @@ class Session {
 }
 
 module.exports = { Session, DAY };
+
