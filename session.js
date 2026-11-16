@@ -9,6 +9,9 @@ const {
 } = require('@whiskeysockets/baileys');
 const { parseContacts, fillTemplate } = require('./contacts');
 const { handleBinCommand } = require('./bin');
+const { loadKnowledge } = require('./knowledge');
+let KB = null;
+const knowledgeRules = () => (KB || (KB = loadKnowledge(path.join(__dirname, 'conocimiento'))));
 
 const DAY = 24 * 60 * 60 * 1000;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -36,6 +39,7 @@ const DEFAULTS = {
   warningsBeforeKick: 1, adminNumbers: [], profileStatus: '', binCommandEnabled: true,
   telegramBridgeEnabled: false, telegramGroupJid: '',
   autoReplyEnabled: false, autoReplyGroups: false, autoReplyCooldownMin: 360,
+  autoReplyGroupHint: '👋 ¡Aquí ando! Pregúntame por precios, funciones o algo de ciberseguridad 🙌',
   autoReplyWelcome: '👋 ¡Hola! Gracias por escribir. En un momento te atendemos. Cuéntanos en qué podemos ayudarte.',
   autoReplyMedia: '📎 ¡Gracias por tu {tipo}! Para atenderte mejor, ¿me lo escribes en un mensajito? Así te respondo volando 🙌',
   autoReplyRules: [],
@@ -322,7 +326,7 @@ class Session {
     let reply = null;
     if (text) {                                              // 1) palabra clave (aplica en privado y en grupo)
       const low = norm(text);
-      const rule = (c.autoReplyRules || []).find(r => r.match &&
+      const rule = [...(c.autoReplyRules || []), ...knowledgeRules()].find(r => r.match &&
         String(r.match).split(/[,|]/).map(t => norm(t.trim())).filter(Boolean).some(t => matchTerm(low, t)));
       if (rule) reply = rule.reply;
     }
@@ -331,7 +335,10 @@ class Session {
       const cd = Math.max(0, Number(c.autoReplyCooldownMin) || 0) * 60000;
       if (now - (this.greeted.get(jid) || 0) >= cd) { reply = c.autoReplyWelcome; this.greeted.set(jid, now); }
     }
-    if (!reply && isGroup) reply = c.autoReplyWelcome;       // en grupo lo mencionaron pero sin palabra clave: saluda
+    if (!reply && isGroup) {                                 // lo mencionaron pero sin palabra clave
+      if (!/\?|\¿/.test(text)) return;                        // si no es una pregunta (un "no", "ok"...), no responde
+      reply = c.autoReplyGroupHint || '👋 ¿En qué te ayudo?';  // si es pregunta, un mensaje corto
+    }
     if (!reply || !this.isConnected) return;
     // variantes: si la respuesta trae "||", elige una al azar para sonar más natural
     if (reply.includes('||')) {
