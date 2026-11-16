@@ -35,7 +35,7 @@ const DEFAULTS = {
   enabled: true, blockedWords: [], blockLinks: true, maxMessagesPerWindow: 6, windowSeconds: 10,
   warningsBeforeKick: 1, adminNumbers: [], profileStatus: '', binCommandEnabled: true,
   telegramBridgeEnabled: false, telegramGroupJid: '',
-  autoReplyEnabled: false, autoReplyCooldownMin: 360,
+  autoReplyEnabled: false, autoReplyGroups: false, autoReplyCooldownMin: 360,
   autoReplyWelcome: '👋 ¡Hola! Gracias por escribir. En un momento te atendemos. Cuéntanos en qué podemos ayudarte.',
   autoReplyMedia: '📎 ¡Gracias por tu {tipo}! Para atenderte mejor, ¿me lo escribes en un mensajito? Así te respondo volando 🙌',
   autoReplyRules: [],
@@ -288,30 +288,50 @@ class Session {
     this.log('Respondí .bin en ' + (this.groupList.find(g => g.id === jid)?.subject || jid.split('@')[0]) + '.');
   }
 
+  // ¿El mensaje menciona (@) a este número, o responde a un mensaje del bot?
+  mentionsMe(m) {
+    const msg = this.innerMsg(m);
+    const ctx = msg?.extendedTextMessage?.contextInfo || msg?.imageMessage?.contextInfo
+      || msg?.videoMessage?.contextInfo || msg?.contextInfo || {};
+    const me = new Set();
+    const add = v => { const n = digits(String(v || '').split('@')[0].split(':')[0]); if (n) me.add(n); };
+    add(this.config.phone);
+    add(this.sock?.user?.id);
+    add(this.sock?.user?.lid);
+    for (const j of (ctx.mentionedJid || [])) if (me.has(digits(String(j).split('@')[0].split(':')[0]))) return true;
+    if (ctx.participant && me.has(digits(String(ctx.participant).split('@')[0].split(':')[0]))) return true;
+    return false;
+  }
+
   // ---- respuestas automáticas (atención a clientes en privado) ----
   async autoReply(m) {
     const c = this.config;
     const jid = m.key.remoteJid;
     if (!this.rentalOk || !c.autoReplyEnabled || !jid || m.key.fromMe) return;
-    if (!/@(s\.whatsapp\.net|lid)$/.test(jid)) return;       // solo chats privados (incluye el ID nuevo @lid), no grupos ni estados
+    const isGroup = jid.endsWith('@g.us');
+    const isPrivate = /@(s\.whatsapp\.net|lid)$/.test(jid);
+    if (isGroup) { if (!c.autoReplyGroups || !this.isManagedGroup(jid) || !this.mentionsMe(m)) return; } // en grupos: activado, grupo marcado y que lo mencionen
+    else if (!isPrivate) return;                             // ni estados ni canales
     const text = this.getText(m).trim();
     if (/^\s*[.!/]bin\b/i.test(text)) return;                // .bin lo atiende su propia función
     const kind = this.mediaKind(m);
     if (!text && !kind) return;                              // sin texto ni archivo: nada que atender
     const now = Date.now();
-    if (now - (this.lastAuto.get(jid) || 0) < 5000) return;  // anti-rebote: máx. 1 cada 5 s por contacto
+    const flKey = isGroup ? jid + ':' + (m.key.participant || '') : jid;
+    if (now - (this.lastAuto.get(flKey) || 0) < 5000) return; // anti-rebote
     let reply = null;
-    if (text) {                                              // 1) palabra clave
+    if (text) {                                              // 1) palabra clave (aplica en privado y en grupo)
       const low = norm(text);
       const rule = (c.autoReplyRules || []).find(r => r.match &&
         String(r.match).split(/[,|]/).map(t => norm(t.trim())).filter(Boolean).some(t => matchTerm(low, t)));
       if (rule) reply = rule.reply;
     }
-    if (!reply && kind && !text) reply = c.autoReplyMedia || null;  // 2) mandó foto/audio sin texto
-    if (!reply) {                                            // 3) bienvenida (con descanso)
+    if (!reply && isPrivate && kind && !text) reply = c.autoReplyMedia || null;  // 2) foto/audio: solo en privado
+    if (!reply && isPrivate) {                               // 3) bienvenida: solo en privado (con descanso)
       const cd = Math.max(0, Number(c.autoReplyCooldownMin) || 0) * 60000;
       if (now - (this.greeted.get(jid) || 0) >= cd) { reply = c.autoReplyWelcome; this.greeted.set(jid, now); }
     }
+    if (!reply && isGroup) reply = c.autoReplyWelcome;       // en grupo lo mencionaron pero sin palabra clave: saluda
     if (!reply || !this.isConnected) return;
     // variantes: si la respuesta trae "||", elige una al azar para sonar más natural
     if (reply.includes('||')) {
@@ -320,7 +340,7 @@ class Session {
     }
     const tipo = kind === 'imagen' ? 'foto' : (kind || 'mensaje');
     reply = reply.replace(/\{tipo\}/gi, tipo);
-    this.lastAuto.set(jid, now);
+    this.lastAuto.set(flKey, now);
     await this.sock.sendMessage(jid, { text: String(reply) });
     this.log('Respuesta automática enviada a ' + jid.split('@')[0] + '.');
   }
