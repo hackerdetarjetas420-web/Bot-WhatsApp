@@ -257,6 +257,7 @@ app.get('/s/:id', (req, res) => {
   <section><h2>Respuestas automáticas</h2>
     <p><small>El bot responde solo a los clientes que te escriben al privado de este número.</small></p>
     <label class="chk"><input type="checkbox" name="autoReplyEnabled" ${c.autoReplyEnabled ? 'checked' : ''}> Activar respuestas automáticas</label>
+    <label class="chk"><input type="checkbox" name="autoReplyGroups" ${c.autoReplyGroups ? 'checked' : ''}> Responder en los grupos marcados, solo cuando lo mencionen con @ o respondan a sus mensajes</label>
     <label>Mensaje de bienvenida (la primera vez que escriben)</label>
     <textarea name="autoReplyWelcome" rows="3">${esc(c.autoReplyWelcome)}</textarea>
     <label>Respuesta cuando mandan una foto, audio o archivo</label>
@@ -353,6 +354,7 @@ app.post('/s/:id/save', (req, res) => {
   c.telegramBridgeEnabled = b.telegramBridgeEnabled === 'on';
   c.telegramGroupJid = String(b.telegramGroupJid || '').endsWith('@g.us') ? String(b.telegramGroupJid) : '';
   c.autoReplyEnabled = b.autoReplyEnabled === 'on';
+  c.autoReplyGroups = b.autoReplyGroups === 'on';
   c.autoReplyWelcome = String(b.autoReplyWelcome || '');
   c.autoReplyMedia = String(b.autoReplyMedia || '');
   c.autoReplyCooldownMin = Math.max(0, Number(b.autoReplyCooldownMin) || 0);
