@@ -14,6 +14,11 @@ const DAY = 24 * 60 * 60 * 1000;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const digits = s => String(s || '').replace(/\D/g, '');
 const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const reEscape = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// palabras de 1-3 letras: coincidencia exacta (palabra completa). Más largas: por contenido (para plurales).
+const matchTerm = (low, term) => term.length <= 3
+  ? new RegExp('(^|[^a-z0-9])' + reEscape(term) + '($|[^a-z0-9])').test(low)
+  : low.includes(term);
 const today = () => new Date().toLocaleDateString('es-MX', { timeZone: 'America/Cancun' });
 let cachedVersion = null;
 async function waVersion() {
@@ -299,7 +304,7 @@ class Session {
     if (text) {                                              // 1) palabra clave
       const low = norm(text);
       const rule = (c.autoReplyRules || []).find(r => r.match &&
-        String(r.match).split(/[,|]/).map(t => norm(t.trim())).filter(Boolean).some(t => low.includes(t)));
+        String(r.match).split(/[,|]/).map(t => norm(t.trim())).filter(Boolean).some(t => matchTerm(low, t)));
       if (rule) reply = rule.reply;
     }
     if (!reply && kind && !text) reply = c.autoReplyMedia || null;  // 2) mandó foto/audio sin texto
@@ -409,4 +414,3 @@ class Session {
 }
 
 module.exports = { Session, DAY };
-
