@@ -259,6 +259,8 @@ app.get('/s/:id', (req, res) => {
     <label class="chk"><input type="checkbox" name="autoReplyEnabled" ${c.autoReplyEnabled ? 'checked' : ''}> Activar respuestas automáticas</label>
     <label>Mensaje de bienvenida (la primera vez que escriben)</label>
     <textarea name="autoReplyWelcome" rows="3">${esc(c.autoReplyWelcome)}</textarea>
+    <label>Respuesta cuando mandan una foto, audio o archivo</label>
+    <textarea name="autoReplyMedia" rows="2">${esc(c.autoReplyMedia)}</textarea>
     <label>Respuestas por palabra clave (una por línea: <b>palabra = respuesta</b>)</label>
     <textarea name="autoReplyRules" rows="4" placeholder="precio = Nuestros planes empiezan en $150 al mes.&#10;horario = Atendemos de 9am a 6pm.">${esc((c.autoReplyRules || []).map(r => r.match + ' = ' + r.reply).join('\n'))}</textarea>
     <label>No repetir la bienvenida al mismo contacto (minutos)</label>
@@ -352,6 +354,7 @@ app.post('/s/:id/save', (req, res) => {
   c.telegramGroupJid = String(b.telegramGroupJid || '').endsWith('@g.us') ? String(b.telegramGroupJid) : '';
   c.autoReplyEnabled = b.autoReplyEnabled === 'on';
   c.autoReplyWelcome = String(b.autoReplyWelcome || '');
+  c.autoReplyMedia = String(b.autoReplyMedia || '');
   c.autoReplyCooldownMin = Math.max(0, Number(b.autoReplyCooldownMin) || 0);
   c.autoReplyRules = String(b.autoReplyRules || '').split('\n').map(line => {
     const i = line.indexOf('=');
