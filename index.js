@@ -254,6 +254,16 @@ app.get('/s/:id', (req, res) => {
     </select>
     <label class="chk"><input type="checkbox" name="telegramBridgeEnabled" ${c.telegramBridgeEnabled ? 'checked' : ''}> Reenviar los mensajes de Telegram a ese grupo</label>
   </section>
+  <section><h2>Respuestas automáticas</h2>
+    <p><small>El bot responde solo a los clientes que te escriben al privado de este número.</small></p>
+    <label class="chk"><input type="checkbox" name="autoReplyEnabled" ${c.autoReplyEnabled ? 'checked' : ''}> Activar respuestas automáticas</label>
+    <label>Mensaje de bienvenida (la primera vez que escriben)</label>
+    <textarea name="autoReplyWelcome" rows="3">${esc(c.autoReplyWelcome)}</textarea>
+    <label>Respuestas por palabra clave (una por línea: <b>palabra = respuesta</b>)</label>
+    <textarea name="autoReplyRules" rows="4" placeholder="precio = Nuestros planes empiezan en $150 al mes.&#10;horario = Atendemos de 9am a 6pm.">${esc((c.autoReplyRules || []).map(r => r.match + ' = ' + r.reply).join('\n'))}</textarea>
+    <label>No repetir la bienvenida al mismo contacto (minutos)</label>
+    <input name="autoReplyCooldownMin" type="number" min="0" value="${c.autoReplyCooldownMin}">
+  </section>
   <section><h2>Moderación</h2>
     <label>Palabras prohibidas (separadas por coma)</label><input name="blockedWords" value="${esc(c.blockedWords.join(', '))}">
     <label class="chk"><input type="checkbox" name="blockLinks" ${c.blockLinks ? 'checked' : ''}> Bloquear enlaces</label>
@@ -340,6 +350,15 @@ app.post('/s/:id/save', (req, res) => {
   c.binCommandEnabled = b.binCommandEnabled === 'on';
   c.telegramBridgeEnabled = b.telegramBridgeEnabled === 'on';
   c.telegramGroupJid = String(b.telegramGroupJid || '').endsWith('@g.us') ? String(b.telegramGroupJid) : '';
+  c.autoReplyEnabled = b.autoReplyEnabled === 'on';
+  c.autoReplyWelcome = String(b.autoReplyWelcome || '');
+  c.autoReplyCooldownMin = Math.max(0, Number(b.autoReplyCooldownMin) || 0);
+  c.autoReplyRules = String(b.autoReplyRules || '').split('\n').map(line => {
+    const i = line.indexOf('=');
+    if (i < 0) return null;
+    const match = line.slice(0, i).trim(), reply = line.slice(i + 1).trim();
+    return match && reply ? { match, reply } : null;
+  }).filter(Boolean);
   s.save(); s.log('Configuración guardada.');
   res.redirect('/s/' + s.id);
 });
