@@ -268,7 +268,7 @@ class Session {
     const c = this.config;
     const jid = m.key.remoteJid;
     if (!this.rentalOk || !c.autoReplyEnabled || !jid || m.key.fromMe) return;
-    if (!jid.endsWith('@s.whatsapp.net')) return;            // solo chats privados, no grupos ni estados
+    if (!/@(s\.whatsapp\.net|lid)$/.test(jid)) return;       // solo chats privados (incluye el ID nuevo @lid), no grupos ni estados
     const text = this.getText(m).trim();
     if (!text || /^\s*[.!/]bin\b/i.test(text)) return;       // .bin lo atiende su propia función
     const now = Date.now();
