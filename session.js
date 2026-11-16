@@ -32,6 +32,7 @@ const DEFAULTS = {
   telegramBridgeEnabled: false, telegramGroupJid: '',
   autoReplyEnabled: false, autoReplyCooldownMin: 360,
   autoReplyWelcome: '👋 ¡Hola! Gracias por escribir. En un momento te atendemos. Cuéntanos en qué podemos ayudarte.',
+  autoReplyMedia: '📎 ¡Gracias por tu mensaje! Ya lo recibí. Dame un momentito y te respondo enseguida. 🙌',
   autoReplyRules: [],
   defaultCountryCode: '52', broadcastMessage: 'Hola {nombre} 👋',
   broadcastDailyLimit: 30, broadcastMinDelaySec: 60, broadcastMaxDelaySec: 120
@@ -203,6 +204,25 @@ class Session {
   }
 
   // ---- moderación ----
+  innerMsg(m) {
+    let msg = m.message;
+    for (let i = 0; i < 5 && msg; i++) {
+      const inner = msg.ephemeralMessage || msg.viewOnceMessage || msg.viewOnceMessageV2 || msg.documentWithCaptionMessage || msg.editedMessage;
+      if (!inner?.message) break;
+      msg = inner.message;
+    }
+    if (msg?.protocolMessage?.editedMessage) msg = msg.protocolMessage.editedMessage;
+    return msg || {};
+  }
+  mediaKind(m) {
+    const msg = this.innerMsg(m);
+    if (msg.imageMessage) return 'imagen';
+    if (msg.videoMessage) return 'video';
+    if (msg.audioMessage) return 'audio';
+    if (msg.stickerMessage) return 'sticker';
+    if (msg.documentMessage) return 'documento';
+    return '';
+  }
   getText(m) {
     let msg = m.message;
     for (let i = 0; i < 5 && msg; i++) {
@@ -270,19 +290,29 @@ class Session {
     if (!this.rentalOk || !c.autoReplyEnabled || !jid || m.key.fromMe) return;
     if (!/@(s\.whatsapp\.net|lid)$/.test(jid)) return;       // solo chats privados (incluye el ID nuevo @lid), no grupos ni estados
     const text = this.getText(m).trim();
-    if (!text || /^\s*[.!/]bin\b/i.test(text)) return;       // .bin lo atiende su propia función
+    if (/^\s*[.!/]bin\b/i.test(text)) return;                // .bin lo atiende su propia función
+    const kind = this.mediaKind(m);
+    if (!text && !kind) return;                              // sin texto ni archivo: nada que atender
     const now = Date.now();
     if (now - (this.lastAuto.get(jid) || 0) < 5000) return;  // anti-rebote: máx. 1 cada 5 s por contacto
-    const low = norm(text);
-    const rule = (c.autoReplyRules || []).find(r => r.match &&
-      String(r.match).split(/[,|]/).map(t => norm(t.trim())).filter(Boolean).some(t => low.includes(t)));
     let reply = null;
-    if (rule) reply = rule.reply;
-    else {
+    if (text) {                                              // 1) palabra clave
+      const low = norm(text);
+      const rule = (c.autoReplyRules || []).find(r => r.match &&
+        String(r.match).split(/[,|]/).map(t => norm(t.trim())).filter(Boolean).some(t => low.includes(t)));
+      if (rule) reply = rule.reply;
+    }
+    if (!reply && kind && !text) reply = c.autoReplyMedia || null;  // 2) mandó foto/audio sin texto
+    if (!reply) {                                            // 3) bienvenida (con descanso)
       const cd = Math.max(0, Number(c.autoReplyCooldownMin) || 0) * 60000;
       if (now - (this.greeted.get(jid) || 0) >= cd) { reply = c.autoReplyWelcome; this.greeted.set(jid, now); }
     }
     if (!reply || !this.isConnected) return;
+    // variantes: si la respuesta trae "||", elige una al azar para sonar más natural
+    if (reply.includes('||')) {
+      const opts = reply.split('||').map(x => x.trim()).filter(Boolean);
+      if (opts.length) reply = opts[Math.floor(Math.random() * opts.length)];
+    }
     this.lastAuto.set(jid, now);
     await this.sock.sendMessage(jid, { text: String(reply) });
     this.log('Respuesta automática enviada a ' + jid.split('@')[0] + '.');
