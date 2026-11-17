@@ -258,6 +258,8 @@ app.get('/s/:id', (req, res) => {
     <p><small>El bot responde solo a los clientes que te escriben al privado de este número.</small></p>
     <label class="chk"><input type="checkbox" name="autoReplyEnabled" ${c.autoReplyEnabled ? 'checked' : ''}> Activar respuestas automáticas</label>
     <label class="chk"><input type="checkbox" name="autoReplyGroups" ${c.autoReplyGroups ? 'checked' : ''}> Responder en los grupos marcados, solo cuando lo mencionen con @ o respondan a sus mensajes</label>
+    <label>En grupos: respuesta corta cuando lo mencionan sin una pregunta clara</label>
+    <input name="autoReplyGroupHint" value="${esc(c.autoReplyGroupHint)}">
     <label>Mensaje de bienvenida (la primera vez que escriben)</label>
     <textarea name="autoReplyWelcome" rows="3">${esc(c.autoReplyWelcome)}</textarea>
     <label>Respuesta cuando mandan una foto, audio o archivo</label>
@@ -289,7 +291,9 @@ app.get('/s/:id', (req, res) => {
     <form method="post" action="/s/${s.id}/broadcast/start">
       <label>Archivo de contactos (.vcf o .csv) — opcional</label><input type="file" id="cfile" accept=".vcf,.csv,.txt,text/vcard,text/csv">
       <label>Contactos (uno por línea; “Nombre | +52 998 123 4567” o solo el número)</label>
-      <textarea name="contacts" id="ctext" rows="5" placeholder="+52 998 123 4567&#10;Ana | +1 305 555 0123"></textarea><small id="ccount"></small>
+      <textarea name="contacts" id="ctext" rows="5" placeholder="+52 998 123 4567&#10;Ana | +1 305 555 0123"></textarea>
+    <label>Mensaje de expulsión (usa {nombre}, {numero}, {id}, {alias}, {motivo})</label>
+    <textarea name="kickMessage" rows="6">${esc(c.kickMessage)}</textarea><small id="ccount"></small>
       <label>Código de país para números de 10 dígitos sin +</label><input name="defaultCountryCode" value="${esc(c.defaultCountryCode)}" inputmode="numeric">
       <label>Mensaje ({nombre} = nombre del contacto)</label><textarea name="broadcastMessage" rows="4">${esc(c.broadcastMessage)}</textarea>
       <label>Máximo por día</label><input name="broadcastDailyLimit" type="number" min="1" value="${c.broadcastDailyLimit}">
@@ -351,10 +355,12 @@ app.post('/s/:id/save', (req, res) => {
   c.adminNumbers = String(b.adminNumbers || '').split(',').map(x => digits(x)).filter(Boolean);
   c.enabled = b.enabled === 'on';
   c.binCommandEnabled = b.binCommandEnabled === 'on';
+  c.kickMessage = String(b.kickMessage || '');
   c.telegramBridgeEnabled = b.telegramBridgeEnabled === 'on';
   c.telegramGroupJid = String(b.telegramGroupJid || '').endsWith('@g.us') ? String(b.telegramGroupJid) : '';
   c.autoReplyEnabled = b.autoReplyEnabled === 'on';
   c.autoReplyGroups = b.autoReplyGroups === 'on';
+  c.autoReplyGroupHint = String(b.autoReplyGroupHint || '');
   c.autoReplyWelcome = String(b.autoReplyWelcome || '');
   c.autoReplyMedia = String(b.autoReplyMedia || '');
   c.autoReplyCooldownMin = Math.max(0, Number(b.autoReplyCooldownMin) || 0);
