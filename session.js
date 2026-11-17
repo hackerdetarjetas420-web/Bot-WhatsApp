@@ -37,6 +37,7 @@ const DEFAULTS = {
   scheduledMessage: '📢 Aviso del grupo: mantengamos el orden y respetemos las reglas.',
   enabled: true, blockedWords: [], blockLinks: true, maxMessagesPerWindow: 6, windowSeconds: 10,
   warningsBeforeKick: 1, adminNumbers: [], profileStatus: '', binCommandEnabled: true,
+  kickMessage: '🚨 EXPULSIÓN AUTOMÁTICA\n═══════════════════\n\n👤 Usuario: {nombre}\n┝ Alias: {alias}\n┕ ID: {id}\n\n🛡️ Expulsado por: {motivo}',
   telegramBridgeEnabled: false, telegramGroupJid: '',
   autoReplyEnabled: false, autoReplyGroups: false, autoReplyCooldownMin: 360,
   autoReplyGroupHint: '👋 ¡Aquí ando! Pregúntame por precios, funciones o algo de ciberseguridad 🙌',
@@ -269,8 +270,13 @@ class Session {
       if (count > c.warningsBeforeKick) {
         await this.sock.groupParticipantsUpdate(jid, [sender], 'remove');
         this.warnings.delete(key);
-        this.log(`Expulsado ${sender.split('@')[0]}: ${reason}`);
-        await this.sock.sendMessage(jid, { text: `⛔ Usuario expulsado por ${reason}.` });
+        const num = digits((m.key.participantPn || sender).split('@')[0].split(':')[0]) || sender.split('@')[0];
+        const nombre = (m.pushName && m.pushName.trim()) || num || 'Usuario';
+        const tpl = c.kickMessage || '⛔ Usuario expulsado por {motivo}.';
+        const txt = tpl.replace(/\{nombre\}/gi, nombre).replace(/\{numero\}/gi, num)
+          .replace(/\{id\}/gi, num).replace(/\{alias\}/gi, '@' + num).replace(/\{motivo\}/gi, reason);
+        this.log(`Expulsado ${num}: ${reason}`);
+        await this.sock.sendMessage(jid, { text: txt, mentions: [sender] });
       } else {
         await this.sock.sendMessage(jid, { text: `⚠️ @${sender.split('@')[0]}, mensaje eliminado por ${reason}. Una infracción más puede causar expulsión.`, mentions: [sender] });
         this.log(`Advertencia a ${sender.split('@')[0]}: ${reason}`);
@@ -346,10 +352,22 @@ class Session {
       if (opts.length) reply = opts[Math.floor(Math.random() * opts.length)];
     }
     const tipo = kind === 'imagen' ? 'foto' : (kind || 'mensaje');
-    reply = reply.replace(/\{tipo\}/gi, tipo);
+    reply = reply.replace(/\{tipo\}/gi, tipo).replace(/\\n/g, '\n');  // \n en el texto = salto de línea real
     this.lastAuto.set(flKey, now);
+    const who = jid.split('@')[0];
+    const am = /^audio:/i.exec(reply);                       // respuesta tipo audio:nombre.ogg
+    if (am) {
+      const name = path.basename(reply.slice(am[0].length).trim());
+      let fp = null;
+      for (const d of [path.join(__dirname, 'audios'), __dirname]) { const c = path.join(d, name); if (fs.existsSync(c)) { fp = c; break; } }
+      if (!fp) { this.log('Audio no encontrado: ' + name + ' (súbelo al repo).'); return; }
+      const mp3 = /\.mp3$/i.test(fp);
+      await this.sock.sendMessage(jid, { audio: fs.readFileSync(fp), mimetype: mp3 ? 'audio/mpeg' : 'audio/ogg; codecs=opus', ptt: true });
+      this.log('Audio (' + name + ') enviado a ' + who + '.');
+      return;
+    }
     await this.sock.sendMessage(jid, { text: String(reply) });
-    this.log('Respuesta automática enviada a ' + jid.split('@')[0] + '.');
+    this.log('Respuesta automática enviada a ' + who + '.');
   }
 
   // ---- puente de Telegram ----
