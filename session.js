@@ -366,6 +366,19 @@ class Session {
       this.log('Audio (' + name + ') enviado a ' + who + '.');
       return;
     }
+    const vm = /^video:/i.exec(reply);                       // respuesta tipo video:nombre.mp4  (o  video:nombre.mp4 | texto)
+    if (vm) {
+      const rest = reply.slice(vm[0].length).trim();
+      const [fileRaw, ...capParts] = rest.split('|');
+      const name = path.basename(fileRaw.trim());
+      const caption = capParts.join('|').trim();
+      let fp = null;
+      for (const d of [path.join(__dirname, 'videos'), __dirname]) { const c = path.join(d, name); if (fs.existsSync(c)) { fp = c; break; } }
+      if (!fp) { this.log('Video no encontrado: ' + name + ' (súbelo al repo).'); return; }
+      await this.sock.sendMessage(jid, { video: fs.readFileSync(fp), mimetype: 'video/mp4', caption: caption || undefined });
+      this.log('Video (' + name + ') enviado a ' + who + '.');
+      return;
+    }
     await this.sock.sendMessage(jid, { text: String(reply) });
     this.log('Respuesta automática enviada a ' + who + '.');
   }
