@@ -217,3 +217,156 @@ emociones, vender con emocion = ❤️ La gente compra por emoción y justifica 
 primera impresion, saludo, trato = 😊 Los primeros segundos deciden. Un saludo cálido y respuesta rápida ya te ponen por delante.
 manipular, engañar, trucos sucios = 🙅 Ojo: persuadir con la verdad vende y fideliza; engañar te quema la reputación. Usa estas técnicas siempre con honestidad.
 
+
+
+# Tema: Recomendaciones y consejos
+que me recomiendas, recomiendame, que me aconsejas, dame un consejo, recomendacion = 😊 Con gusto. Dime qué necesitas (más ventas, atención automática, moderar grupos, proteger tu info) y te recomiendo lo mejor para tu caso.
+cual plan me conviene, que plan, cual me recomiendas, que me conviene = 👍 Si es un solo número para atender clientes, con uno basta. Si manejas varios grupos o negocios, te conviene paquete de varios números (sale más barato). ¿Cuántos números usarías?
+me conviene, vale la pena, sirve, es bueno = ✅ Si contestas muchos mensajes al día o moderas grupos, te ahorra horas y no se te escapa ningún cliente. Pruébalo 2 días gratis y lo compruebas.
+como empiezo, por donde empiezo, primeros pasos = 🚀 Fácil: 1) me dices el número de WhatsApp, 2) lo vinculas escaneando un QR, 3) configuras tus respuestas en el panel. Yo te acompaño en todo.
+que necesito para empezar, requisitos = 📱 Solo un número de WhatsApp. Nada de computadora ni conocimientos técnicos. Yo te lo dejo listo.
+me ayudas a elegir, no se que elegir, estoy indeciso = 🤔 Claro. Cuéntame para qué lo quieres y tu presupuesto, y te digo la opción exacta que te conviene, sin venderte de más.
+mejor opcion, lo mejor, que es mejor = 😎 "Lo mejor" depende de lo que necesites. Dime tu meta y te doy la opción con mejor precio-beneficio para ti.
+consejo de ventas, como vendo mas, tips de ventas = 💡 Tres claves: responde rápido (el bot lo hace 24/7), da seguimiento a los que no compran, y ofrece una prueba gratis para bajar el miedo a comprar. ¿Te ayudo a montarlo?
+
+
+# Tema: Programación (explicaciones sencillas)
+que es programar, que es programacion = 💻 Programar es darle instrucciones a una computadora para que haga tareas. Se escribe en "lenguajes" como JavaScript, Python o Java.
+que lenguaje aprendo, por donde empiezo a programar, primer lenguaje = 🚀 Para empezar, Python es el más fácil de leer. Para páginas web, HTML, CSS y JavaScript. Dime qué quieres crear y te oriento.
+que es html = 🌐 HTML es el "esqueleto" de una página web: define los textos, títulos, imágenes y botones. Es lo primero que se aprende para hacer webs.
+que es css = 🎨 CSS es el "maquillaje" de una web: colores, tamaños, posiciones y estilo. Trabaja junto al HTML para que la página se vea bonita.
+que es javascript, que es js = ⚡ JavaScript le da vida a una web: menús, animaciones, formularios que responden. Es de los lenguajes más usados del mundo.
+que es python = 🐍 Python es un lenguaje fácil de leer, muy usado para automatizar tareas, análisis de datos e inteligencia artificial.
+que es una api = 🔌 Una API es un "puente" que deja que dos programas se hablen. Por ejemplo, una app del clima pide datos a una API y te muestra el pronóstico.
+que es una base de datos = 🗄️ Es donde un programa guarda su información ordenada (usuarios, productos, pedidos) para consultarla después. Ejemplos: MySQL, PostgreSQL.
+que es un servidor, que es hosting = ☁️ Un servidor es una computadora encendida siempre que guarda y "sirve" tu página o app a internet. El hosting es rentar ese espacio (ej. Render, Vercel).
+que es github = 🐙 GitHub es como una nube para guardar y versionar código. Permite trabajar en equipo y tener respaldo de cada cambio.
+que es un bug, que es un error de codigo = 🐛 Un bug es un error en el código que hace que algo falle. Programar incluye buscar y corregir bugs; es normal.
+que es frontend = 🖥️ El frontend es todo lo que ve y toca el usuario: la pantalla, botones y diseño de una app o web.
+que es backend = ⚙️ El backend es la parte de atrás: la lógica, el servidor y la base de datos. El usuario no lo ve, pero hace que todo funcione.
+cuanto tardo en aprender a programar, es dificil programar = ⏳ Con práctica constante, en unos meses ya haces cosas útiles. No es cuestión de ser "genio", sino de practicar. Paso a paso se logra.
+me ensenas a programar, quiero aprender a programar = 😊 Puedo orientarte con lo básico y recomendarte por dónde ir. Dime qué te gustaría crear (una web, un bot, una app) y arrancamos.
+
+
+# Tema: Creación de páginas web y trabajos por proyecto
+haces paginas, creas paginas web, diseño web, necesito una pagina = 🌐 ¡Sí! Hago páginas web a la medida: para negocios, tiendas, catálogos, landing de ventas o personales. Dime qué necesitas y te paso una propuesta.
+cuanto cuesta una pagina, precio de una pagina web, costo de pagina = 💰 Depende del tamaño. Una página sencilla (información + contacto) es económica; una tienda o con sistema cuesta más. Cuéntame qué quieres y te cotizo sin compromiso.
+que necesito para una pagina, que me pides para la pagina = 📋 Solo necesito saber: qué tipo de página, si ya tienes logo/colores, textos e imágenes, y si quieres dominio propio. Lo demás lo armo yo.
+cuanto tardas en hacer una pagina, tiempo de entrega pagina = ⏱️ Una página sencilla en pocos días; una más completa toma más. Te doy una fecha clara al cotizar.
+dominio, nombre de pagina, www = 🌍 El dominio es el nombre de tu página (ej. tunegocio.com). Te ayudo a elegirlo y conectarlo.
+trabajo por proyecto, cotizar proyecto, me haces un proyecto = 🤝 Claro, trabajo por proyecto. Me explicas qué necesitas, te doy precio y tiempo cerrados, y lo entrego funcionando. ¿Qué tienes en mente?
+tienda en linea, ecommerce, pagina para vender = 🛒 Te armo una tienda para mostrar productos y recibir pedidos o pagos. Dime cuántos productos y cómo quieres cobrar.
+landing page, pagina de ventas = 🎯 Una landing es una página enfocada en vender UNA cosa, con botón de contacto directo. Convierte muy bien. ¿Para qué producto la quieres?
+mantenimiento de pagina, actualizar mi pagina = 🔧 También doy mantenimiento: cambios de textos, imágenes, precios o arreglos. Te paso plan mensual o por cambio.
+portafolio, ejemplos de tu trabajo, muestras = 😊 Con gusto te comparto ejemplos cuando hablemos. Dime qué estilo te gusta y te muestro algo parecido.
+
+
+# Tema: Renta del bot de WhatsApp
+que es el bot, que hace el bot, para que sirve el bot = 🤖 Es un asistente para WhatsApp que atiende solo: responde mensajes, da la bienvenida, modera grupos (borra spam y enlaces), expulsa, y manda avisos. Trabaja 24/7 sin que estés al pendiente.
+rentas el bot, se renta, quiero rentar, como rento el bot = 👍 Sí, se renta por número de WhatsApp conectado. Me dices cuántos números quieres y te activo. ¿Arrancamos con tu prueba gratis?
+cuanto cuesta el bot, precio del bot, costo mensual = 💵 El bot sale desde $170 al mes por número. Con varios números te hago mejor precio. ¿Cuántos usarías?
+prueba gratis, demo, lo puedo probar = 🎁 ¡Claro! Te doy 2 días gratis para que lo pruebes sin pagar nada. Si te late, lo activamos completo.
+que incluye el bot, funciones del bot, que trae = ✨ Incluye: respuestas automáticas, bienvenida, moderación (anti-spam, anti-enlaces, expulsión), avisos programados, envío a contactos y panel para controlar todo.
+como funciona el bot, como se conecta = 📲 Conectas tu WhatsApp escaneando un QR (como WhatsApp Web). De ahí el bot vive en la nube y atiende solo, aunque apagues tu teléfono.
+se apaga el bot, se desconecta, si apago el celular = ☁️ No se apaga. Corre en la nube, así que sigue activo aunque tu celular esté apagado o sin internet.
+cuantos numeros, varios numeros, mas de un numero = 🔢 Puedes conectar varios números a la vez, cada uno con su propia configuración, grupos y respuestas. Ideal si manejas varios negocios.
+renovar, pagar otro mes, extender renta = 🔄 Para renovar solo me avisas y extiendo tu renta. Te aviso antes de que venza para que no se te corte.
+se vence, cuando vence, vencimiento = 📅 Cada número tiene su fecha de vencimiento. Cuando se acerca, te aviso para renovar. Si vence, el bot se pausa hasta que renueves.
+formas de pago, como pago el bot, donde pago = 💳 Acepto transferencia, depósito y OXXO. Me confirmas, te paso los datos, y en cuanto caiga el pago te activo.
+es seguro el bot, me pueden banear = 🛡️ Usándolo de forma normal (atender y moderar) es seguro. Para envíos masivos se hace con calma y te enseño cómo evitar bloqueos.
+el bot responde groserias, el bot es grosero = 🙂 No. El bot siempre responde con respeto y educación. Si alguien le falta al respeto, pide amablemente un trato cordial.
+
+
+# Tema: Cómo cuidar tu información personal (defensivo)
+como cuido mi informacion, proteger mis datos, cuidar mi informacion = 🛡️ Claves: contraseñas fuertes y distintas, activa la verificación en dos pasos, no compartas tus códigos, y desconfía de enlaces raros. ¿Quieres que te explique alguno?
+contraseña segura, como hago una buena contraseña, password fuerte = 🔐 Usa 12+ caracteres mezclando mayúsculas, números y símbolos. Mejor una frase larga que recuerdes. Y NUNCA la misma en todos lados.
+verificacion en dos pasos, 2fa, autenticacion = ✅ La verificación en dos pasos pide un segundo código además de tu contraseña. Aunque alguien sepa tu clave, sin ese código no entra. Actívala en WhatsApp, correo y banca.
+me quieren robar la cuenta, me van a hackear, me hackearon = ⚠️ Cambia tu contraseña ya, activa verificación en dos pasos y cierra sesiones abiertas. Nunca des códigos que te lleguen por SMS a nadie.
+no des tu codigo, codigo de whatsapp, me piden mi codigo = 🚫 ¡Nunca compartas el código de 6 dígitos que te llega por SMS! Ni a "soporte", ni a amigos. Quien te lo pide quiere robarte la cuenta.
+phishing, correo falso, enlace sospechoso, link raro = 🎣 El phishing son mensajes falsos que imitan a bancos o apps para robarte datos. No toques enlaces raros ni metas tu contraseña ahí. Entra siempre desde la app o la web oficial.
+me llego un mensaje de mi banco, premio, ganaste = 🎭 Desconfía. Bancos y empresas no piden claves ni códigos por mensaje. Si dudas, llama al número oficial que viene en tu tarjeta, no al del mensaje.
+wifi publico, red publica, es seguro el wifi = 📶 En wifi público evita entrar a tu banco o meter contraseñas. Si lo necesitas, usa los datos de tu celular o una VPN.
+respaldo, backup, copia de seguridad = 💾 Haz copias de tus fotos y archivos importantes (en la nube o un disco). Si pierdes el teléfono o te lo roban, no pierdes todo.
+me robaron el celular, perdi mi telefono = 📱 Desde otro dispositivo cierra sesión de WhatsApp y tus cuentas, cambia contraseñas y reporta el equipo con tu operador. Tener 2FA activo evita que entren.
+privacidad whatsapp, que vean mi info, me ven mi foto = 🔒 En Ajustes > Privacidad de WhatsApp controla quién ve tu foto, estado y última conexión. Ponlo en "Mis contactos" para más privacidad.
+estafa, me quieren estafar, fraude, me estafaron = 🚨 Si algo suena demasiado bueno o te presionan a pagar rápido, es señal de estafa. No pagues ni des datos. Verifica siempre por canales oficiales.
+
+
+# Tema: Ciberseguridad (defensiva, educativa)
+que es ciberseguridad = 🛡️ Es el conjunto de prácticas para proteger tus dispositivos, cuentas y datos de ataques o robos. En corto: cuidar tu vida digital.
+que es un virus, malware = 🦠 Un virus o malware es un programa dañino que se mete a tu equipo para robar datos, espiar o dañarlo. Un buen antivirus y no abrir archivos raros te protegen.
+que es un hacker = 👨‍💻 Un hacker es alguien con mucho conocimiento técnico. Los "éticos" protegen sistemas y buscan fallas para arreglarlas; los maliciosos las usan para dañar. El conocimiento es la herramienta; el uso define el lado.
+hacking etico, hacker etico, pentesting = ✅ El hacking ético es buscar fallas en sistemas CON permiso, para repararlas y hacerlos más seguros. Es una profesión legal y muy demandada.
+que es una vpn = 🔒 Una VPN cifra tu conexión y oculta tu ubicación de red. Útil en wifi público para que nadie vea lo que haces.
+que es cifrado, encriptacion = 🔐 El cifrado convierte tu información en un código ilegible para quien no tenga la "llave". Por eso WhatsApp dice "cifrado de extremo a extremo": solo tú y el otro leen.
+antivirus, necesito antivirus = 🧰 Sí ayuda, sobre todo en computadoras. Mantenlo actualizado y evita descargar programas "pirata", que suelen traer malware.
+actualizaciones, actualizar mi telefono, updates = 🔄 Instala las actualizaciones: no son solo funciones nuevas, también tapan fallas de seguridad que los atacantes aprovechan.
+que es ingenieria social = 🎭 Es engañar a una persona (no a la máquina) para que entregue datos o acceso: llamadas falsas, mensajes de "soporte", urgencias inventadas. La defensa es desconfiar y verificar.
+que es un ataque de fuerza bruta = 🔨 Es cuando un programa prueba miles de contraseñas hasta adivinar la tuya. Por eso una clave larga y la verificación en dos pasos lo frenan.
+que es doble factor, mfa = 🔑 Es pedir dos pruebas para entrar: tu contraseña y un código o huella. Aunque roben una, falta la otra. Actívalo en todo lo importante.
+me espian, me hackean el whatsapp, leen mis mensajes = 🔎 Revisa en WhatsApp > Dispositivos vinculados y cierra los que no reconozcas. Activa verificación en dos pasos y no compartas tu código.
+carding, clonar tarjetas, datos de tarjetas = 🚫 Eso es fraude y es ilegal. No ayudo con nada de eso. Lo que sí puedo es enseñarte a PROTEGER tus tarjetas y datos de los estafadores.
+como protejo mi tarjeta, cuidar mi tarjeta = 💳 Activa alertas y compras con NIP, no la guardes en sitios desconocidos, revisa tus movimientos seguido, y nunca des el código de 3 dígitos por mensaje o llamada.
+
+
+# Tema: Conversación general y ayuda
+hola, buenas, que tal, holi, ola = 👋 ¡Hola! ¿En qué te puedo ayudar hoy? Pregúntame sobre el bot, páginas web, ciberseguridad o lo que necesites. || 😊 ¡Qué gusto! Dime, ¿cómo te ayudo?
+buenos dias = ☀️ ¡Buenos días! ¿En qué te ayudo hoy?
+buenas tardes = 🌇 ¡Buenas tardes! ¿Qué necesitas?
+buenas noches = 🌙 ¡Buenas noches! Dime en qué te puedo apoyar.
+como estas, como te va, que onda = 😄 ¡Muy bien, gracias! Listo para ayudarte. ¿Y tú, en qué andas?
+quien eres, que eres, eres un bot = 🤖 Soy un asistente virtual que atiende por aquí. Te ayudo con información, ventas y dudas al instante.
+gracias, muchas gracias, te pasaste, mil gracias = 🙌 ¡Con gusto! Aquí ando para lo que necesites. || 😊 ¡Para servirte! Cualquier cosa, me dices.
+adios, bye, nos vemos, hasta luego, me voy = 👋 ¡Hasta pronto! Cuando quieras aquí estoy. Cuídate mucho. 🙌
+si, ok, va, vale, de acuerdo, esta bien = 👍 ¡Perfecto! ¿Seguimos?
+no, nel, paso, no quiero = 👌 Sin problema. Si cambias de idea, aquí ando.
+ayuda, necesito ayuda, me ayudas, auxilio = 🤝 ¡Claro que sí! Cuéntame qué necesitas y lo vemos juntos, paso a paso.
+no entiendo, no le entiendo, explicame, me explicas = 😊 Tranqui, te lo explico fácil. ¿Qué parte no te quedó clara? Dímelo con tus palabras y lo aclaro.
+no se, no estoy seguro, tengo una duda = 🤔 No te preocupes, para eso estoy. Dime tu duda y la resolvemos.
+me puedes ayudar con algo, tengo una pregunta = 😊 ¡Por supuesto! Dispárame tu pregunta.
+estas ahi, hay alguien, me escuchas = 👋 ¡Aquí estoy! Dime, ¿en qué te ayudo?
+que sabes hacer, que puedes hacer, en que me ayudas = 💡 Te ayudo con: info del bot y rentas, creación de páginas web, consejos de ciberseguridad, cómo cuidar tu información, ventas y dudas generales. ¿Qué te interesa?
+eres real, eres una persona, eres humano = 🤖 Soy un asistente automático, pero atiendo en serio y si necesitas a una persona, te canalizo. ¿En qué te ayudo?
+cuentame algo, platicame, aburrido = 😄 Te cuento: ¿sabías que una buena contraseña larga puede tardar años en ser adivinada? Si quieres te doy un tip para proteger tus cuentas.
+te amo, me caes bien, eres lo mejor = 😊 ¡Gracias, qué buena onda! Aquí sigo para ayudarte en lo que necesites.
+
+
+# Tema: Redes sociales y marketing digital
+como vendo en redes, vender en redes sociales, vender en facebook = 📣 Clave: publica seguido, muestra tu producto en uso, responde rápido (eso lo hace el bot) y usa una oferta clara. ¿Te ayudo a armar tus mensajes?
+como consigo clientes, atraer clientes, mas clientes = 🎯 Con contenido útil, responder al instante y dar seguimiento. El bot te ayuda a no dejar ningún mensaje sin contestar.
+marketing, que es marketing = 📊 Marketing es todo lo que haces para que te conozcan, confíen y te compren: contenido, ofertas, atención y seguimiento.
+redes sociales, cuales redes uso, en que red publico = 📱 Depende de tu cliente: Facebook e Instagram para la mayoría de negocios, TikTok para público joven, WhatsApp para cerrar ventas. Empieza donde ya están tus clientes.
+contenido, que publico, ideas de publicaciones = 💡 Mezcla: producto en uso, testimonios, antes/después, tips útiles y promos. Lo constante gana. ¿Quieres ideas para tu giro?
+hashtags, etiquetas = #️⃣ Usa 5-10 hashtags relacionados a tu producto y tu zona (ej. #tacosCancun). Ayudan a que te encuentren.
+historias, stories, estados = 📸 Sube historias a diario: ofertas del día, detrás de cámaras, encuestas. Mantienen tu negocio presente sin saturar.
+publicidad pagada, anuncios, ads = 💸 Los anuncios aceleran, pero primero ten claro tu mensaje y tu oferta. Empieza con poco presupuesto y mide qué funciona.
+engagement, interaccion, likes = ❤️ Responde comentarios y mensajes rápido, haz preguntas y pide opiniones. La interacción hace que más gente te vea.
+como hago una promocion, promo, oferta = 🏷️ Haz una oferta con límite claro: "2x1 solo hoy" o "10% esta semana". La urgencia mueve a comprar. ¿Te ayudo a redactarla?
+
+
+# Tema: Soporte técnico general (celular, apps, internet)
+mi celular esta lento, telefono lento, va lento = 🐢 Prueba: reinícialo, borra apps que no uses, limpia el caché y deja espacio libre de almacenamiento. Suele mejorar bastante.
+se calienta mi celular, se calienta el telefono = 🔥 Cierra apps en segundo plano, quítale el cargador si ya está lleno, y no lo uses mientras carga. Si sigue, puede ser la batería.
+bateria se acaba rapido, se descarga rapido, dura poco la bateria = 🔋 Baja el brillo, apaga ubicación y datos cuando no los uses, y revisa qué app consume más en Ajustes > Batería.
+no tengo espacio, memoria llena, almacenamiento lleno = 💾 Borra fotos/videos repetidos, sube a la nube, limpia descargas y vacía el caché de apps como WhatsApp.
+no me funciona el internet, sin internet, no tengo señal = 📶 Activa y desactiva el modo avión, reinicia el router o el teléfono, y revisa si es tu equipo o el servicio. ¿Es wifi o datos?
+no me carga whatsapp, whatsapp no funciona, no envia mensajes = 📲 Checa tu internet, cierra y abre WhatsApp, y revisa que esté actualizado. Si sigue, reinicia el teléfono.
+como actualizo una app, actualizar aplicacion = 🔄 Entra a la tienda (Play Store o App Store), busca la app y toca "Actualizar". Mejor déjalo en automático.
+olvide mi contraseña, recuperar contraseña, no puedo entrar = 🔑 Usa "¿Olvidaste tu contraseña?" en la app o web; te mandan un enlace o código a tu correo o teléfono para restablecerla.
+como libero espacio, limpiar mi telefono = 🧹 Borra lo que no uses, vacía caché, sube fotos a la nube y quita apps que no abres. En minutos recuperas espacio.
+se me traba una app, la app se cierra, se cierra sola = 🔧 Ciérrala del todo, actualízala, y si sigue, borra su caché. Como último recurso, desinstálala y vuelve a instalarla.
+como respaldo mis fotos, guardar mis fotos = ☁️ Activa la copia de seguridad en Google Fotos o iCloud. Así aunque pierdas el teléfono, tus fotos quedan a salvo.
+
+
+# Tema: Negocios y emprendimiento
+quiero emprender, como empiezo un negocio, iniciar negocio = 🚀 Empieza resolviendo un problema real para alguien. Valida que lo quieran pagar, arranca pequeño y mejora con lo que te digan los clientes.
+no tengo dinero para empezar, empezar sin dinero = 💪 Muchos negocios arrancan con poco: ofrece un servicio con lo que ya sabes, usa redes gratis y reinvierte tus primeras ventas.
+como pongo precio, cuanto cobro, fijar precios = 🏷️ Suma tus costos, el tiempo que inviertes y una ganancia justa. No seas el más barato; sé el que da más valor. ¿Te ayudo a calcularlo?
+como me hago conocido, dar a conocer mi negocio = 📣 Publica constante en redes, pide a clientes contentos que te recomienden, y responde rápido. El bot te ayuda a atender sin perder a nadie.
+como cobro, formas de cobro, aceptar pagos = 💳 Puedes cobrar con transferencia, efectivo, terminal o links de pago. Ofrece varias opciones para no perder ventas.
+como organizo mi negocio, llevar cuentas, administrar = 📒 Lleva registro de ingresos y gastos (aunque sea en una libreta o Excel), separa el dinero del negocio del personal, y revisa tus números cada semana.
+como fidelizo clientes, que vuelvan, clientes frecuentes = 🤝 Trata bien, cumple lo que prometes, da seguimiento y premia a los que regresan. Un cliente feliz te trae más clientes.
+atencion al cliente, buen servicio = 😊 Responde rápido, con amabilidad y resolviendo. La atención es lo que te diferencia. Por eso el bot contesta al instante 24/7.
+como hago crecer mi negocio, escalar, crecer = 📈 Automatiza lo repetitivo (como responder mensajes), enfócate en lo que más vende, y reinvierte. Crecer es hacer más de lo que funciona.
+competencia, hay mucha competencia, como compito = 🎯 No compitas solo por precio. Gana por servicio, rapidez y confianza. Haz que comprarte sea fácil y agradable.
+me da miedo emprender, y si fracaso = 💙 Es normal. Empieza pequeño para arriesgar poco, aprende de cada intento, y recuerda: cada negocio exitoso empezó con dudas. Paso a paso.
