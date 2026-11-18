@@ -30,6 +30,12 @@ async function waVersion() {
   catch { return cachedVersion?.version; }
 }
 
+// Groserías/insultos para la regla de respeto (detección, no se usan para responder así).
+const DEFAULT_RUDE = ['pendejo','pendeja','pendejos','estupido','estupida','idiota','imbecil','tarado','baboso','menso','mensa',
+  'puto','puta','putos','putas','pinche','pinches','culero','culera','cabron','cabrona','cabrones','mamada','mamadas',
+  'chinga','chingas','chinga tu','chingada','chingado','verga','vergas','joto','jotos','marica','maricon','maricones',
+  'mierda','perra','perro','zorra','malparido','gonorrea','hijo de','hdp','hp','vrg','ctm','pndj','mrd','estupidez','estupideces'];
+
 const DEFAULTS = {
   name: '', client: '', notes: '', phone: '',
   createdAt: 0, expiresAt: 0, active: true,
@@ -44,6 +50,10 @@ const DEFAULTS = {
   autoReplyWelcome: '👋 ¡Hola! Gracias por escribir. En un momento te atendemos. Cuéntanos en qué podemos ayudarte.',
   autoReplyMedia: '📎 ¡Gracias por tu {tipo}! Para atenderte mejor, ¿me lo escribes en un mensajito? Así te respondo volando 🙌',
   autoReplyRules: [],
+  respectEnabled: true,
+  respectMessage: '🙅 Disculpa, no puedo seguir una conversación vulgar. Te pido respeto para poder ayudarte 🙏 Si quieres que te siga atendiendo, hablemos con cordialidad.',
+  respectCooldownMin: 10,
+  rudeWords: [],
   defaultCountryCode: '52', broadcastMessage: 'Hola {nombre} 👋',
   broadcastDailyLimit: 30, broadcastMinDelaySec: 60, broadcastMaxDelaySec: 120
 };
@@ -66,7 +76,7 @@ class Session {
     this.registered = false; this.lastError = ''; this.needsRelink = false;
     this.connecting = false; this.retryTimer = null; this.retries = 0; this.stopped = false;
     this.groupList = []; this.recent = new Map(); this.warnings = new Map(); this.logs = [];
-    this.greeted = new Map(); this.lastAuto = new Map();
+    this.greeted = new Map(); this.lastAuto = new Map(); this.rudeWarned = new Map();
     this.lastSent = Date.now(); this.sendingAvisos = false; this.bcRunning = false;
   }
 
@@ -207,6 +217,17 @@ class Session {
     catch (e) { this.log('No se pudieron cargar grupos: ' + e.message); }
   }
 
+  // Muestra "escribiendo..." (o "grabando audio...") un ratito antes de responder, para que se vea natural.
+  async showTyping(jid, text, mode = 'composing') {
+    if (!this.sock) return;
+    try {
+      await this.sock.sendPresenceUpdate(mode, jid);
+      const base = mode === 'recording' ? 1500 : 700;
+      const ms = Math.min(4500, base + String(text || '').length * 28);
+      await sleep(ms);
+    } catch {}
+  }
+
   async applyProfileStatus() {
     if (!this.isConnected || !this.config.profileStatus) return;
     try { await this.sock.updateProfileStatus(this.config.profileStatus.slice(0, 139)); this.log('Descripción del perfil actualizada.'); }
@@ -329,6 +350,23 @@ class Session {
     const now = Date.now();
     const flKey = isGroup ? jid + ':' + (m.key.participant || '') : jid;
     if (now - (this.lastAuto.get(flKey) || 0) < 5000) return; // anti-rebote
+    // 0) regla de respeto: si el mensaje trae groserías, pide un trato cordial (con descanso para no repetir)
+    if (c.respectEnabled !== false && text) {
+      const lowR = norm(text);
+      const rude = [...DEFAULT_RUDE, ...(c.rudeWords || [])].map(w => norm(w)).filter(Boolean).some(w => matchTerm(lowR, w));
+      if (rude) {
+        const cd = Math.max(0, Number(c.respectCooldownMin) || 0) * 60000;
+        if (now - (this.rudeWarned.get(flKey) || 0) >= cd && this.isConnected) {
+          this.rudeWarned.set(flKey, now);
+          this.lastAuto.set(flKey, now);
+          const msg = (c.respectMessage || '🙏 Te pido respeto para poder ayudarte.').replace(/\\n/g, '\n');
+          await this.showTyping(jid, msg);
+          await this.sock.sendMessage(jid, { text: msg });
+          this.log('Pedí respeto a ' + jid.split('@')[0] + ' (mensaje ofensivo).');
+        }
+        return;                                                // no sigue con la respuesta normal
+      }
+    }
     let reply = null;
     if (text) {                                              // 1) palabra clave (aplica en privado y en grupo)
       const low = norm(text);
@@ -362,6 +400,7 @@ class Session {
       for (const d of [path.join(__dirname, 'audios'), __dirname]) { const c = path.join(d, name); if (fs.existsSync(c)) { fp = c; break; } }
       if (!fp) { this.log('Audio no encontrado: ' + name + ' (súbelo al repo).'); return; }
       const mp3 = /\.mp3$/i.test(fp);
+      await this.showTyping(jid, name, 'recording');          // muestra "grabando audio..."
       await this.sock.sendMessage(jid, { audio: fs.readFileSync(fp), mimetype: mp3 ? 'audio/mpeg' : 'audio/ogg; codecs=opus', ptt: true });
       this.log('Audio (' + name + ') enviado a ' + who + '.');
       return;
@@ -375,10 +414,12 @@ class Session {
       let fp = null;
       for (const d of [path.join(__dirname, 'videos'), __dirname]) { const c = path.join(d, name); if (fs.existsSync(c)) { fp = c; break; } }
       if (!fp) { this.log('Video no encontrado: ' + name + ' (súbelo al repo).'); return; }
+      await this.showTyping(jid, caption || 'video', 'recording');  // muestra "grabando video..."
       await this.sock.sendMessage(jid, { video: fs.readFileSync(fp), mimetype: 'video/mp4', caption: caption || undefined });
       this.log('Video (' + name + ') enviado a ' + who + '.');
       return;
     }
+    await this.showTyping(jid, reply);                        // muestra "escribiendo..." antes del texto
     await this.sock.sendMessage(jid, { text: String(reply) });
     this.log('Respuesta automática enviada a ' + who + '.');
   }
