@@ -11,7 +11,7 @@ const { parseContacts, fillTemplate } = require('./contacts');
 const { handleBinCommand } = require('./bin');
 const { loadKnowledge } = require('./knowledge');
 let KB = null;
-const knowledgeRules = () => (KB || (KB = loadKnowledge(path.join(__dirname, 'conocimiento'))));
+const knowledgeRules = () => (KB || (KB = loadKnowledge(__dirname)));  // lee conocimiento*.txt de la raíz y de la carpeta conocimiento/
 
 const DAY = 24 * 60 * 60 * 1000;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -104,6 +104,17 @@ class Session {
     const p = g?.participants?.find(x => ids.includes(x.id) || ids.includes(x.lid) || ids.includes(x.phoneNumber) || ids.includes(x.jid));
     return Boolean(p && (p.admin === 'admin' || p.admin === 'superadmin'));
   }
+  // ¿Es dueño/admin del bot? Solo los números de "Números protegidos / admin" pueden usar comandos de dueño (.ban).
+  // Compara por los últimos 10 dígitos para no fallar por el prefijo de México (52 vs 521).
+  isAdmin(...ids) {
+    const tail = s => digits(s).slice(-10);
+    const list = (this.config.adminNumbers || []).map(tail).filter(Boolean);
+    for (const id of ids.filter(Boolean)) {
+      const n = tail(String(id).split('@')[0].split(':')[0]);
+      if (n && list.includes(n)) return true;
+    }
+    return false;
+  }
 
   // ---- conexión ----
   async connect() {
@@ -160,6 +171,7 @@ class Session {
       socket.ev.on('messages.upsert', async ({ messages, type }) => {
         if (this.sock !== socket || type !== 'notify') return;
         for (const m of messages) {
+          await this.handleBan(m).catch(e => this.log('Error en .ban: ' + e.message));
           await this.handleBin(m).catch(e => this.log('Error en .bin: ' + e.message));
           await this.autoReply(m).catch(e => this.log('Error en respuesta automática: ' + e.message));
           await this.moderate(m).catch(e => this.log('Error de moderación: ' + e.message));
@@ -319,6 +331,44 @@ class Session {
     this.log('Respondí .bin en ' + (this.groupList.find(g => g.id === jid)?.subject || jid.split('@')[0]) + '.');
   }
 
+  // ---- comando de dueño: .ban (expulsa a alguien del grupo; solo admins) ----
+  async handleBan(m) {
+    const c = this.config;
+    const jid = m.key.remoteJid;
+    const text = this.getText(m);
+    if (!jid || !/^\s*[.!/]ban\b/i.test(text)) return;          // solo mensajes que empiezan con .ban
+    if (!this.rentalOk || !jid.endsWith('@g.us') || !this.isManagedGroup(jid)) return; // solo en grupos administrados
+    const sender = m.key.participant || '';
+    // Solo el dueño/admins (los números de "Números protegidos / admin") pueden usar .ban. A los demás los ignora.
+    if (!this.isAdmin(sender, m.key.participantPn, m.key.participantAlt, m.key.participantLid)) return;
+    if (!this.isConnected) return;
+    // Objetivo: respondiendo a su mensaje, o mencionándolo con @
+    const inner = this.innerMsg(m);
+    const ctx = inner?.extendedTextMessage?.contextInfo || inner?.contextInfo || {};
+    let target = ctx.participant || (ctx.mentionedJid && ctx.mentionedJid[0]) || null;
+    if (!target) {
+      await this.sock.sendMessage(jid, { text: '⚠️ Para sacar a alguien: responde a su mensaje y escribe *.ban* (o menciónalo: .ban @persona).' }, { quoted: m });
+      return;
+    }
+    // No permitir banear a otro admin/dueño
+    if (this.isAdmin(target)) {
+      await this.sock.sendMessage(jid, { text: '🛡️ Esa persona es admin del bot, no la puedo sacar.' }, { quoted: m });
+      return;
+    }
+    try {
+      await this.sock.groupParticipantsUpdate(jid, [target], 'remove');
+      const num = digits(String(target).split('@')[0].split(':')[0]);
+      const tpl = c.kickMessage || '⛔ Usuario expulsado por {motivo}.';
+      const txt = tpl.replace(/\{nombre\}/gi, num || 'Usuario').replace(/\{numero\}/gi, num)
+        .replace(/\{id\}/gi, num).replace(/\{alias\}/gi, '@' + num).replace(/\{motivo\}/gi, 'expulsado por un administrador');
+      await this.sock.sendMessage(jid, { text: txt, mentions: [target] });
+      this.log('.ban por admin ' + sender.split('@')[0] + ' → sacó a ' + num);
+    } catch (e) {
+      await this.sock.sendMessage(jid, { text: '❌ No pude sacarla. Revisa que el *bot sea administrador* del grupo.' }, { quoted: m });
+      this.log('Error al banear: ' + e.message);
+    }
+  }
+
   // ¿El mensaje menciona (@) a este número, o responde a un mensaje del bot?
   mentionsMe(m) {
     const msg = this.innerMsg(m);
@@ -344,7 +394,7 @@ class Session {
     if (isGroup) { if (!c.autoReplyGroups || !this.isManagedGroup(jid) || !this.mentionsMe(m)) return; } // en grupos: activado, grupo marcado y que lo mencionen
     else if (!isPrivate) return;                             // ni estados ni canales
     const text = this.getText(m).trim();
-    if (/^\s*[.!/]bin\b/i.test(text)) return;                // .bin lo atiende su propia función
+    if (/^\s*[.!/](bin|ban)\b/i.test(text)) return;          // .bin y .ban los atienden sus propias funciones
     const kind = this.mediaKind(m);
     if (!text && !kind) return;                              // sin texto ni archivo: nada que atender
     const now = Date.now();
