@@ -9,9 +9,21 @@ const {
 } = require('@whiskeysockets/baileys');
 const { parseContacts, fillTemplate } = require('./contacts');
 const { handleBinCommand } = require('./bin');
-const { loadKnowledge } = require('./knowledge');
-let KB = null;
-const knowledgeRules = () => (KB || (KB = loadKnowledge(__dirname)));  // lee conocimiento*.txt de la raíz y de la carpeta conocimiento/
+const { loadKnowledge, loadKnowledgeFiles } = require('./knowledge');
+// Caché de conocimiento. La clave '*' es la general (conocimiento*.txt de la raíz).
+// Un número con "knowledgeFile" carga SOLO sus archivos, aislado del resto.
+const KB_CACHE = new Map();
+function kbGeneral() {
+  if (!KB_CACHE.has('*')) KB_CACHE.set('*', loadKnowledge(__dirname));
+  return KB_CACHE.get('*');
+}
+function kbForFiles(names) {
+  const clean = names.map(s => String(s).trim()).filter(Boolean);
+  const key = clean.map(s => s.toLowerCase()).sort().join('|');
+  if (!key) return kbGeneral();
+  if (!KB_CACHE.has(key)) KB_CACHE.set(key, loadKnowledgeFiles(__dirname, clean));
+  return KB_CACHE.get(key);
+}
 
 const DAY = 24 * 60 * 60 * 1000;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -50,6 +62,8 @@ const DEFAULTS = {
   autoReplyWelcome: '👋 ¡Hola! Gracias por escribir. En un momento te atendemos. Cuéntanos en qué podemos ayudarte.',
   autoReplyMedia: '📎 ¡Gracias por tu {tipo}! Para atenderte mejor, ¿me lo escribes en un mensajito? Así te respondo volando 🙌',
   autoReplyRules: [],
+  knowledgeFile: '',
+  ownerWelcome: '🤖 ¡Hola! Soy tu bot asistente 🙌\n\nEstoy entrenado con la información que cargamos para este número. Le respondo a tus clientes al instante, 24/7: dudas, servicios, precios, citas y más.\n\nPuedes probarme haciéndome preguntas como si fueras un cliente, por ejemplo:\n• "¿Qué servicios tienen?"\n• "¿Cuánto cuesta?"\n• "Quiero una cita"\n\nSi quieres que aprenda algo nuevo o cambie una respuesta, avísale a quien configura el bot. ¡Aquí ando para ayudarte! 💪',
   respectEnabled: true,
   respectMessage: '🙅 Disculpa, no puedo seguir una conversación vulgar. Te pido respeto para poder ayudarte 🙏 Si quieres que te siga atendiendo, hablemos con cordialidad.',
   respectCooldownMin: 10,
@@ -94,6 +108,11 @@ class Session {
   get daysLeft() { return this.config.expiresAt ? Math.ceil((this.config.expiresAt - Date.now()) / DAY) : null; }
   get isConnected() { return Boolean(this.sock) && this.connection === 'Conectado'; }
   isManagedGroup(jid) { return this.config.groupJids.includes(jid); }
+  // Conocimiento de ESTE número: si tiene "knowledgeFile" usa solo esos archivos (aislado); si no, el general.
+  knowledge() {
+    const f = String(this.config.knowledgeFile || '').trim();
+    return f ? kbForFiles(f.split(',')) : kbGeneral();
+  }
   // Protegido si está en "Números protegidos" (por teléfono) o si es administrador del grupo.
   isProtected(groupJid, ...ids) {
     const list = this.config.adminNumbers.map(digits);
@@ -417,17 +436,34 @@ class Session {
         return;                                                // no sigue con la respuesta normal
       }
     }
+    // 0.5) si quien escribe es el DUEÑO (su número está en "admin"), no le vendas: preséntate y explícale.
+    const isOwner = isPrivate && this.isAdmin(jid, m.key.participant, m.key.participantPn);
+    if (isOwner && text) {
+      const lowO = norm(text);
+      const esSaludo = /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|ola|holi|que onda|menu|info|inicio|empezar|start|probar|prueba|test|quien eres|que sabes|que puedes hacer|ayuda)\b/.test(lowO) || lowO.length <= 4;
+      if (esSaludo && c.ownerWelcome) {
+        if (now - (this.greeted.get(jid) || 0) >= 60000 && this.isConnected) {  // 1 min para no repetir seguido
+          this.greeted.set(jid, now); this.lastAuto.set(flKey, now);
+          const msg = c.ownerWelcome.replace(/\\n/g, '\n');
+          await this.showTyping(jid, msg);
+          await this.sock.sendMessage(jid, { text: msg });
+          this.log('Presentación de dueño enviada a ' + jid.split('@')[0] + '.');
+        }
+        return;
+      }
+      // si no es saludo, sigue el flujo normal para que el dueño pueda probar preguntas
+    }
     let reply = null;
     if (text) {                                              // 1) palabra clave (aplica en privado y en grupo)
       const low = norm(text);
-      const rule = [...(c.autoReplyRules || []), ...knowledgeRules()].find(r => r.match &&
+      const rule = [...(c.autoReplyRules || []), ...this.knowledge()].find(r => r.match &&
         String(r.match).split(/[,|]/).map(t => norm(t.trim())).filter(Boolean).some(t => matchTerm(low, t)));
       if (rule) reply = rule.reply;
     }
     if (!reply && isPrivate && kind && !text) reply = c.autoReplyMedia || null;  // 2) foto/audio: solo en privado
     if (!reply && isPrivate) {                               // 3) bienvenida: solo en privado (con descanso)
       const cd = Math.max(0, Number(c.autoReplyCooldownMin) || 0) * 60000;
-      if (now - (this.greeted.get(jid) || 0) >= cd) { reply = c.autoReplyWelcome; this.greeted.set(jid, now); }
+      if (now - (this.greeted.get(jid) || 0) >= cd) { reply = (isOwner && c.ownerWelcome) ? c.ownerWelcome : c.autoReplyWelcome; this.greeted.set(jid, now); }
     }
     if (!reply && isGroup) {                                 // lo mencionaron pero sin palabra clave
       if (!/\?|\¿/.test(text)) return;                        // si no es una pregunta (un "no", "ok"...), no responde

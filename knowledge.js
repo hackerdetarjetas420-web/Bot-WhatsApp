@@ -25,4 +25,15 @@ function loadKnowledge(baseDir) {
   console.info(`[Conocimiento] ${out.length} respuestas cargadas de ${files.length} archivo(s).`);
   return out;
 }
-module.exports = { loadKnowledge };
+// Carga SOLO los archivos indicados (por nombre), para que un número tenga su conocimiento aislado.
+function loadKnowledgeFiles(baseDir, names) {
+  const out = [];
+  const list = [];
+  for (const raw of names) {
+    const name = path.basename(String(raw || '').trim());
+    if (name) { list.push(name); parseFile(path.join(baseDir, name), out); }
+  }
+  console.info(`[Conocimiento] ${out.length} respuestas (aislado: ${list.join(', ') || 'ninguno'}).`);
+  return out;
+}
+module.exports = { loadKnowledge, loadKnowledgeFiles };

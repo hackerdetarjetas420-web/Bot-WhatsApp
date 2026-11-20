@@ -1,0 +1,132 @@
+# Conocimiento DENTAL aislado — Clínica Dental José Contreras
+# (Este archivo lo usa SOLO el número del dentista. No se mezcla con lo demás.)
+# Los datos entre [corchetes] cámbialos por los reales de la clínica.
+
+# ---- Saludos y conversación ----
+hola, buenas, que tal, holi, ola = 👋 ¡Hola! Bienvenido a Clínica Dental José Contreras 🦷 ¿En qué podemos ayudarte? Podemos agendar tu cita o resolver tus dudas.
+buenos dias = ☀️ ¡Buenos días! Clínica Dental José Contreras a tus órdenes. ¿Te gustaría agendar una cita?
+buenas tardes = 🌇 ¡Buenas tardes! ¿En qué podemos ayudarte con tu sonrisa hoy?
+buenas noches = 🌙 ¡Buenas noches! Déjanos tu mensaje y con gusto te atendemos.
+como estas, que tal = 😄 ¡Muy bien, gracias! Listos para cuidar tu sonrisa. ¿Qué necesitas?
+gracias, muchas gracias = 🙌 ¡Con gusto! Tu sonrisa es nuestra prioridad. Aquí andamos para lo que necesites.
+adios, bye, hasta luego = 👋 ¡Que tengas excelente día! Te esperamos en Clínica Dental José Contreras. 🦷
+quien eres, eres un bot = 🤖 Soy el asistente de la Clínica Dental José Contreras. Te ayudo a agendar citas y resolver dudas al instante.
+
+# ---- Citas y contacto ----
+cita, agendar, quiero una cita, agendar cita, sacar cita = 📅 ¡Claro! Para agendar tu cita dinos tu nombre y qué día te viene bien. Atendemos en [horario]. ¿Qué tratamiento necesitas?
+horario, a que hora, cuando abren, horarios = 🕘 Nuestro horario es [lunes a viernes de 9am a 7pm y sábados de 9am a 2pm]. ¿Te agendo una cita?
+donde estan, ubicacion, direccion, donde quedan = 📍 Estamos en [dirección de la clínica]. ¿Quieres que te mande la ubicación o agendamos tu cita?
+telefono, numero, contacto, numero de la clinica = 📞 Puedes contactarnos aquí mismo o directo con el Dr. José Contreras al *+52 715 110 0088*. ¿Te ayudo a agendar?
+urgencia, emergencia, me duele mucho, dolor fuerte = 🚨 Lamentamos tu molestia. Para una urgencia dental, contáctanos de inmediato y te damos prioridad. ¿Puedes venir hoy a [dirección]?
+cancelar cita, cambiar cita, reagendar = 📆 Claro, dinos tu nombre y la fecha de tu cita y la reagendamos sin problema.
+
+# ---- Servicios ----
+servicios, que hacen, tratamientos, que ofrecen = 🦷 Ofrecemos: Odontología General, Estética Dental, Endodoncia, Ortodoncia, Implantes Dentales, Prótesis Dental y Blanqueamiento. ¿Sobre cuál quieres info?
+odontologia general, consulta general, revision, chequeo = 🦷 En odontología general hacemos revisión, limpieza, resinas (tapar caries) y prevención. Una revisión a tiempo evita tratamientos mayores. ¿Agendamos?
+limpieza, limpieza dental, profilaxis, sarro = ✨ La limpieza dental quita sarro y manchas, previene caries y enfermedad de encías. Se recomienda cada 6 meses. ¿Te agendo una?
+estetica dental, diseño de sonrisa, carillas = 😁 La estética dental mejora el aspecto de tu sonrisa: carillas, resinas estéticas y diseño de sonrisa. ¿Quieres una valoración?
+endodoncia, nervio, matar el nervio, tratamiento de conducto = 🦷 La endodoncia (tratamiento de conducto) salva un diente muy dañado o con infección, quitando el nervio afectado. Evita la extracción. ¿Tienes dolor? Te valoramos.
+ortodoncia, brackets, frenos, enderezar dientes = 😬 La ortodoncia alinea tus dientes con brackets (metálicos o estéticos). Mejora tu mordida y tu sonrisa. Ofrecemos valoración para decirte tiempo y costo. ¿Agendamos?
+brackets cuanto cuesta, precio ortodoncia, costo brackets = 💰 El costo de ortodoncia depende de tu caso. Lo exacto se define en una valoración [desde $___]. ¿Te agendo la valoración?
+implantes, implante dental, me falta un diente = 🦷 Los implantes reemplazan dientes perdidos con una base de titanio y una corona que se ve natural. Son fijos y duraderos. ¿Quieres una valoración?
+protesis, dentadura, placa, puente dental = 🦷 Las prótesis reponen varios dientes o toda la dentadura (fijas o removibles). Te devuelven la función y la estética. ¿Agendamos una valoración?
+blanqueamiento, blanquear dientes, dientes blancos, aclarar = ✨ El blanqueamiento aclara el color de tus dientes de forma segura en consultorio. Resultados visibles y profesionales. ¿Te interesa agendar?
+
+# ---- Dudas comunes de pacientes ----
+caries, tengo caries, picado, diente picado = 🦷 La caries es daño en el diente por bacterias. Entre más pronto se trate (con una resina), más fácil y barato. Si avanza, puede necesitar endodoncia. ¿Agendamos revisión?
+me duele una muela, dolor de muela, dolor de diente = 😖 El dolor puede ser por caries, infección o el nervio. Lo ideal es valorarte cuanto antes para quitar el dolor y evitar que empeore. ¿Puedes venir hoy o mañana?
+me sangran las encias, encias sangran, gingivitis = 🩸 El sangrado suele ser gingivitis (encías inflamadas por sarro). Con una limpieza y buena higiene mejora mucho. ¿Te agendo una limpieza?
+mal aliento, halitosis, mal olor boca = 😷 El mal aliento suele venir de sarro, caries o encías. Una limpieza y revisión ayudan bastante. ¿Agendamos?
+muela del juicio, cordal, me sacan la muela = 🦷 Las muelas del juicio a veces salen mal y causan dolor o apiñan los dientes. Valoramos con radiografía si conviene quitarla. ¿Agendamos?
+extraccion, sacar diente, quitar muela = 🦷 Hacemos extracciones de forma segura y con anestesia para que no sientas dolor. Siempre buscamos salvar el diente primero. ¿Quieres valoración?
+dientes chuecos, dientes torcidos, apiñados = 😬 Para dientes chuecos la ortodoncia es la solución. En una valoración te decimos opciones, tiempo y costo. ¿Agendamos?
+duele el blanqueamiento, es seguro blanquear = ✨ El blanqueamiento profesional es seguro; a veces da sensibilidad leve y pasajera. Por eso se hace supervisado. ¿Te interesa?
+anestesia, me van a dormir, duele, me da miedo = 😌 Tranquilo, usamos anestesia para que no sientas dolor y cuidamos que estés cómodo. Atendemos con calma, sin prisas. ¿Agendamos?
+niños, dentista para niños, odontopediatria = 🧒 Atendemos a niños con mucha paciencia y cuidado. Las revisiones desde pequeños previenen problemas. ¿Agendamos la cita de tu peque?
+embarazada, embarazo, puedo ir embarazada = 🤰 Sí se puede, de hecho el cuidado dental en el embarazo es importante. Solo avísanos para tomar precauciones. ¿Agendamos?
+sensibilidad, dientes sensibles, me duele el frio = ❄️ La sensibilidad puede ser por esmalte desgastado, caries o encías retraídas. En consulta vemos la causa y el tratamiento. ¿Agendamos?
+
+# ---- Costos y pagos ----
+precio, costo, cuanto cuesta, precios = 💰 El costo depende del tratamiento. La consulta de valoración es [$___] y ahí te damos el presupuesto exacto, sin compromiso. ¿Te agendo?
+formas de pago, como pago, aceptan tarjeta, pagos = 💳 Aceptamos [efectivo, transferencia y tarjeta]. También manejamos [facilidades/planes de pago] en algunos tratamientos. ¿Agendamos?
+facilidades, pagos en partes, meses = 📝 Sí, en varios tratamientos manejamos facilidades de pago. Te explicamos en tu valoración. ¿Te interesa agendar?
+es caro, muy caro, no me alcanza = 💙 Entendemos. Por eso damos opciones y facilidades según tu caso. Lo mejor es una valoración para ver qué se ajusta a ti. ¿Agendamos sin compromiso?
+
+# ---- Cuidado e higiene ----
+como cuido mis dientes, higiene, cuidado dental = 🪥 Cepíllate 3 veces al día, usa hilo dental a diario, limita el azúcar y ven a limpieza cada 6 meses. ¿Te agendo tu próxima limpieza?
+cada cuando ir al dentista, cuando revision = 📅 Lo ideal es una revisión y limpieza cada 6 meses, aunque no sientas molestias. Prevenir es más barato que curar. ¿Agendamos?
+cepillado, como cepillarme = 🪥 Cepilla 2 minutos, suave y en todas las caras del diente, incluida la lengua. Cambia el cepillo cada 3 meses. ¿Dudas? Con gusto te ayudamos.
+hilo dental, usar hilo = 🧵 El hilo dental limpia entre los dientes donde el cepillo no llega. Úsalo una vez al día, de preferencia en la noche. 👍
+
+# ---- Más tratamientos (detalle) ----
+resina, empaste, tapar caries, relleno = 🦷 La resina es un relleno del color del diente para tapar una caries. Es rápido, en una sola cita y casi no se nota. ¿Agendamos revisión?
+corona, funda dental, cubrir diente = 👑 La corona (funda) cubre un diente muy dañado o después de endodoncia para protegerlo y que se vea natural. ¿Quieres valoración?
+puente dental, puente fijo = 🌉 El puente reemplaza uno o varios dientes faltantes apoyándose en los dientes vecinos. Es fijo y estético. ¿Agendamos?
+incrustacion, incrustaciones = 🦷 La incrustación repara un diente con daño grande cuando una resina simple no basta, pero sin llegar a corona. ¿Te valoramos?
+carillas, carilla, laminas, lentes de contacto dentales = 😁 Las carillas son láminas finas que se pegan al frente del diente para mejorar color, forma y tamaño. Transforman la sonrisa. ¿Quieres valoración?
+limpieza profunda, curetaje, raspado, periodoncia = 🦷 La limpieza profunda (curetaje) trata encías con sarro por debajo y enfermedad periodontal. Salva dientes que de otro modo se aflojan. ¿Agendamos?
+fluor, aplicacion de fluor = 🛡️ El flúor fortalece el esmalte y previene caries, muy útil en niños. Se aplica rápido en consulta. ¿Agendamos?
+selladores, sellantes = 🛡️ Los selladores cubren las ranuras de las muelas para evitar caries, ideales en niños. ¿Quieres agendar?
+guarda, placa de descanso, guarda oclusal, placa para rechinar = 😬 La guarda oclusal protege tus dientes si rechinas o aprietas (bruxismo) al dormir. Evita desgaste y dolor. ¿Te valoramos?
+
+# ---- Más condiciones ----
+bruxismo, rechino los dientes, aprieto los dientes = 😬 El bruxismo es apretar o rechinar los dientes, suele ser por estrés y desgasta tus dientes. Una guarda oclusal los protege. ¿Agendamos valoración?
+flemon, absceso, bolita en la encia, pus = 🚨 Una bolita con pus suele ser un absceso (infección). Es importante tratarlo pronto para evitar que avance. No lo revientes. ¿Puedes venir pronto?
+llagas, aftas, fuegos en la boca = 😣 Las aftas (llagas) suelen sanar solas en días. Si son frecuentes o muy dolorosas, te valoramos. Evita comidas muy ácidas o picantes mientras.
+diente roto, diente fracturado, se me rompio un diente = 🦷 Un diente roto se puede reparar con resina, corona o carilla según el daño. Entre antes, mejor. ¿Puedes venir a valoración?
+diente flojo, diente se mueve, se mueve un diente = ⚠️ Un diente que se mueve puede ser por golpe o enfermedad de encías. Hay que valorarlo pronto para intentar salvarlo. ¿Agendamos?
+espacio entre dientes, diastema, separados = 😁 El espacio entre dientes (diastema) se cierra con ortodoncia, resinas o carillas según el caso. ¿Quieres valoración?
+dientes manchados, manchas en los dientes, dientes amarillos = 🦷 Las manchas pueden ser por café, tabaco o sarro. Según el caso se quitan con limpieza, blanqueamiento o carillas. ¿Agendamos?
+dolor al masticar, me duele al morder = 😖 El dolor al morder puede ser por caries, fractura o infección. Conviene valorarte para dar con la causa. ¿Agendamos?
+dientes apretados, no me pasa el hilo = 🧵 Si no te pasa el hilo puede haber sarro o apiñamiento. Una limpieza y revisión lo aclaran. ¿Agendamos?
+retraccion de encias, encias retiradas, se ven largos los dientes = 🦷 La retracción de encías deja el diente más expuesto y sensible. Vemos la causa (cepillado fuerte, sarro) y cómo frenarla. ¿Te valoramos?
+
+# ---- Ortodoncia (detalle) ----
+tipos de brackets, brackets metalicos, brackets esteticos = 😬 Tenemos brackets metálicos (más económicos) y estéticos (se notan menos). En la valoración te decimos cuál te conviene. ¿Agendamos?
+ortodoncia invisible, alineadores, sin brackets = ✨ Los alineadores transparentes enderezan los dientes casi sin que se noten y son removibles. Te decimos si eres candidato en la valoración. ¿Agendamos?
+cuanto dura la ortodoncia, cuanto tiempo brackets = ⏳ El tiempo depende de cada caso, normalmente entre [12 y 24 meses]. En la valoración te damos un estimado real. ¿Agendamos?
+duelen los brackets, duele la ortodoncia = 😌 Al inicio y tras cada ajuste puede haber molestia leve un par de días, se controla fácil. Nada grave. ¿Te animas a valorarte?
+retenedores, despues de brackets = 🦷 Al terminar la ortodoncia se usan retenedores para que los dientes no se muevan de nuevo. Son clave para mantener el resultado.
+
+# ---- Implantes (detalle) ----
+como es un implante, proceso de implante = 🦷 Se coloca una base de titanio en el hueso, cicatriza unas semanas y luego se pone la corona. Queda fijo y natural. ¿Quieres valoración?
+duele el implante, es doloroso implante = 😌 Se hace con anestesia, no duele durante. Después puede haber molestia leve que se controla. Muchos pacientes se sorprenden de lo llevadero que es.
+cuanto dura un implante, duran los implantes = 🦷 Con buen cuidado, un implante puede durar muchos años (incluso toda la vida). La higiene y las revisiones son clave. ¿Agendamos?
+cuidado de implante = 🧼 Cuida el implante como un diente natural: cepillo, hilo y limpiezas periódicas. Así dura muchísimo.
+
+# ---- Blanqueamiento (detalle) ----
+cuanto dura el blanqueamiento, dura el blanqueado = ✨ El resultado puede durar de [6 meses a 2 años] según tus hábitos (café, tabaco). Se puede retocar. ¿Te interesa agendar?
+tipos de blanqueamiento = ✨ Hay blanqueamiento en consultorio (más rápido y supervisado) y con férulas para casa. Te recomendamos el mejor en tu valoración. ¿Agendamos?
+cuidados despues de blanquear, que no comer blanqueamiento = 🍽️ Los primeros días evita café, vino, refresco oscuro y tabaco para que dure más. Te damos las indicaciones completas.
+
+# ---- Cuidados después de tratamientos ----
+despues de una extraccion, cuidados extraccion, me sacaron una muela = 🩹 Tras una extracción: muerde la gasa 30-40 min, no escupas ni uses popote, nada de caliente el primer día y reposa. Te damos indicaciones completas. Si hay dolor fuerte o sangrado que no para, avísanos.
+despues de endodoncia, cuidados endodoncia = 🦷 Tras una endodoncia evita morder fuerte con ese diente hasta ponerle su corona. Puede estar sensible unos días, es normal. Cualquier duda, aquí estamos.
+que puedo comer despues, comer despues del dentista = 🍽️ Después de varios tratamientos conviene comer blando y tibio las primeras horas. En tu cita te damos las indicaciones exactas según lo que te hagan.
+
+# ---- Niños ----
+primera visita niño, desde que edad al dentista = 🧒 La primera visita se recomienda alrededor del primer añito o al salir los primeros dientes. Prevenir desde pequeños es lo mejor. ¿Agendamos?
+dientes de leche, se cae un diente de leche = 🦷 Los dientes de leche son importantes aunque se caigan: guían a los definitivos. Cuídalos y revísalos igual. ¿Agendamos revisión de tu peque?
+caries en niños, mi hijo tiene caries = 🧒 Las caries en niños se tratan fácil si se agarran a tiempo. Mejor revisarlo pronto para que no duela ni avance. ¿Agendamos?
+
+# ---- Emergencias ----
+se me cayo un diente por un golpe, diente caido golpe = 🚨 Si un diente se salió por un golpe, guárdalo en leche (no lo frotes) y ven de inmediato. Hay chance de reimplantarlo si es rápido. Contáctanos ya.
+no deja de sangrar, sangrado que no para = 🚨 Si hay sangrado fuerte que no cede, muerde una gasa limpia con presión y contáctanos de inmediato para atenderte.
+dolor en la noche, no puedo dormir del dolor = 😖 Un dolor que no te deja dormir necesita valoración pronto. Contáctanos para darte cita prioritaria y quitarte esa molestia.
+
+# ---- Miedo, pena y objeciones ----
+me da miedo el dentista, tengo miedo, fobia dental = 💙 Es muy común y lo entendemos. Trabajamos con calma, explicándote todo y sin dolor. Muchos pacientes nerviosos salen tranquilos. ¿Agendamos una cita sin compromiso?
+me da pena mi boca, me da verguenza mis dientes = 💙 Aquí nadie juzga, al contrario, estamos para ayudarte. Sea cual sea el estado de tus dientes, hay solución. Da el primer paso, ¿agendamos?
+no tengo tiempo, estoy ocupado = ⏰ Te entendemos. Dinos qué horarios te acomodan y buscamos el que mejor te quede. Tu salud dental no puede esperar mucho. ¿Qué día te viene bien?
+no me gusta como se ven mis dientes = 😁 ¡Podemos ayudarte! Con estética dental, carillas, blanqueamiento u ortodoncia transformamos tu sonrisa. ¿Agendamos una valoración para ver opciones?
+
+# ---- Confianza y clínica ----
+es seguro, usan cosas esterilizadas, higiene clinica = ✅ Totalmente. Trabajamos con instrumental esterilizado y protocolos de higiene estrictos para tu seguridad. Tu salud es lo primero.
+tienen experiencia, son buenos, confiable = 🤝 Sí, en Clínica Dental José Contreras cuidamos cada detalle con atención profesional, tecnología y trato humano. Tu sonrisa es nuestra prioridad.
+atienden hoy, puedo ir hoy, hay lugar hoy = 📅 Déjanos revisar la agenda. Dinos tu nombre y a qué hora podrías, y te confirmamos el espacio más próximo.
+
+# ---- Contacto directo del doctor ----
+numero del doctor, contactar directo, hablar con el doctor, numero directo, hablar con alguien, atencion personal = 📲 Con gusto. Puedes contactar directamente al Dr. José Contreras al *+52 715 110 0088*. ¡Con gusto te atiende!
+instagram, redes sociales, ig, los sigo, su instagram = 📸 Síguenos en Instagram: https://www.instagram.com/jose_chambas ahí ves nuestros trabajos y novedades. 🦷
+facebook, redes = 📱 Puedes contactarnos por aquí o seguir al Dr. José Contreras en Instagram: https://www.instagram.com/jose_chambas 🦷
+quiero agendar directo, agendar con el doctor = 📅 ¡Perfecto! Escríbele directo al Dr. José Contreras al *+52 715 110 0088* y con gusto agenda tu cita. 🦷

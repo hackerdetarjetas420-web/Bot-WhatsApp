@@ -262,12 +262,16 @@ app.get('/s/:id', (req, res) => {
     <input name="autoReplyGroupHint" value="${esc(c.autoReplyGroupHint)}">
     <label>Mensaje de bienvenida (la primera vez que escriben)</label>
     <textarea name="autoReplyWelcome" rows="3">${esc(c.autoReplyWelcome)}</textarea>
+    <label>Mensaje para el DUEÑO (cuando escribe un número de "admin": se presenta en vez de vender)</label>
+    <textarea name="ownerWelcome" rows="3">${esc(c.ownerWelcome || '')}</textarea>
     <label>Respuesta cuando mandan una foto, audio o archivo</label>
     <textarea name="autoReplyMedia" rows="2">${esc(c.autoReplyMedia)}</textarea>
     <label>Respuestas por palabra clave (una por línea: <b>palabra = respuesta</b>)</label>
     <textarea name="autoReplyRules" rows="4" placeholder="precio = Nuestros planes empiezan en $150 al mes.&#10;horario = Atendemos de 9am a 6pm.">${esc((c.autoReplyRules || []).map(r => r.match + ' = ' + r.reply).join('\n'))}</textarea>
     <label>No repetir la bienvenida al mismo contacto (minutos)</label>
     <input name="autoReplyCooldownMin" type="number" min="0" value="${c.autoReplyCooldownMin}">
+    <label>Archivo de conocimiento propio (opcional) — aísla la info de este número</label>
+    <input name="knowledgeFile" value="${esc(c.knowledgeFile || '')}" placeholder="ej. kb-dental.txt (vacío = conocimiento general)">
   </section>
   <section><h2>Moderación</h2>
     <label>Palabras prohibidas (separadas por coma)</label><input name="blockedWords" value="${esc(c.blockedWords.join(', '))}">
@@ -362,8 +366,10 @@ app.post('/s/:id/save', (req, res) => {
   c.autoReplyGroups = b.autoReplyGroups === 'on';
   c.autoReplyGroupHint = String(b.autoReplyGroupHint || '');
   c.autoReplyWelcome = String(b.autoReplyWelcome || '');
+  c.ownerWelcome = String(b.ownerWelcome || '');
   c.autoReplyMedia = String(b.autoReplyMedia || '');
   c.autoReplyCooldownMin = Math.max(0, Number(b.autoReplyCooldownMin) || 0);
+  c.knowledgeFile = String(b.knowledgeFile || '').trim();
   c.autoReplyRules = String(b.autoReplyRules || '').split('\n').map(line => {
     const i = line.indexOf('=');
     if (i < 0) return null;
