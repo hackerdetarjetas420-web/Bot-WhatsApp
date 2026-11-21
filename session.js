@@ -80,7 +80,7 @@ function readJson(file, fallback) {
   try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback; }
   catch (e) { console.error('[Multi Bot] Archivo dañado, se usan valores por defecto: ' + file); return fallback; }
 }
-const emptyBroadcast = () => ({ status: 'idle', message: '', queue: [], sent: 0, notOnWhatsApp: 0, failed: 0, total: 0, day: '', sentToday: 0, lastError: '' });
+const emptyBroadcast = () => ({ status: 'idle', message: '', media: null, queue: [], sent: 0, notOnWhatsApp: 0, failed: 0, total: 0, day: '', sentToday: 0, lastError: '' });
 
 class Session {
   constructor(dir, id) {
@@ -504,7 +504,6 @@ class Session {
           return;
         } else if (r.status === 'failed') {
           this.log('Telegram falló para ' + who0 + ': ' + (tgUser.lastError() || 'sin detalle'));
-          if (this.isConnected) await this.sock.sendMessage(jid, { text: '⚠️ No pude obtener el resultado en este momento. Intenta de nuevo en un rato.' });
           return;
         } else {
           this.log('Puente Telegram no disponible: ' + (tgUser.lastError() || 'sin detalle') + ' (se usa la respuesta normal).');
@@ -595,13 +594,13 @@ class Session {
   }
 
   // ---- mensaje a contactos ----
-  startBroadcast(text) {
+  startBroadcast(text, extra = {}) {
     if (['running', 'paused'].includes(this.broadcast.status)) return { error: 'Ya hay un envío en curso.' };
     const { contacts, invalid } = parseContacts(String(text || ''), this.config.defaultCountryCode);
     const queue = contacts.filter(x => x.number !== this.config.phone);
     if (!queue.length) { this.broadcast.lastError = 'No se encontraron números válidos.'; this.saveBroadcast(); return { error: this.broadcast.lastError }; }
     const prevToday = this.broadcast.day === today() ? this.broadcast.sentToday : 0;
-    this.broadcast = { ...emptyBroadcast(), status: 'running', message: this.config.broadcastMessage, queue, total: queue.length, day: today(), sentToday: prevToday };
+    this.broadcast = { ...emptyBroadcast(), status: 'running', message: this.config.broadcastMessage + (extra.link ? '\n\n' + extra.link : ''), media: extra.media || null, queue, total: queue.length, day: today(), sentToday: prevToday };
     this.saveBroadcast();
     this.log(`Envío a contactos iniciado: ${queue.length} números${invalid ? ` (${invalid} inválidos descartados)` : ''}.`);
     this.runBroadcast();
@@ -613,6 +612,16 @@ class Session {
     else if (status === 'running' && b.status === 'paused') { b.status = 'running'; this.log('Envío a contactos reanudado.'); this.runBroadcast(); }
     else if (status === 'cancelled' && ['running', 'paused'].includes(b.status)) { b.status = 'cancelled'; b.queue = []; this.log('Envío a contactos cancelado.'); }
     this.saveBroadcast();
+  }
+  broadcastContent(item) {
+    const text = fillTemplate(this.broadcast.message, item.name);
+    const m = this.broadcast.media;
+    if (!m) return { text };
+    if (!m.file || !fs.existsSync(m.file)) throw new Error('No se encontró el archivo adjunto.');
+    const buf = fs.readFileSync(m.file);
+    if (m.kind === 'image') return { image: buf, caption: text };
+    if (m.kind === 'video') return { video: buf, mimetype: m.mimetype, caption: text };
+    return { document: buf, mimetype: m.mimetype, fileName: m.name, caption: text };
   }
   async runBroadcast() {
     if (this.bcRunning) return;
@@ -631,7 +640,7 @@ class Session {
       try {
         const [res] = await this.sock.onWhatsApp(item.number);
         if (!res?.exists) b().notOnWhatsApp++;
-        else { await this.sock.sendMessage(res.jid, { text: fillTemplate(b().message, item.name) }); b().sent++; b().sentToday++; }
+        else { await this.sock.sendMessage(res.jid, this.broadcastContent(item)); b().sent++; b().sentToday++; }
         b().queue.shift();
       } catch (e) {
         b().lastError = e.message;
