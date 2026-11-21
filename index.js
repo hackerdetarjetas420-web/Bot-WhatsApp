@@ -24,7 +24,7 @@ initBinCache(DATA_DIR);
 tgUser.init(DATA_DIR);
 
 const app = express();
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 app.get('/healthz', (req, res) => res.send('ok'));
 app.use((req, res, next) => {
   const h = req.headers.authorization || '';
@@ -322,6 +322,7 @@ app.get('/s/:id', (req, res) => {
   <section><h2>Mensaje a contactos</h2>
     <p>Estado: <b>${bStatus}</b> · Enviados: ${b.sent} de ${b.total} · Pendientes: ${b.queue.length} · Sin WhatsApp: ${b.notOnWhatsApp} · Fallidos: ${b.failed} · Hoy: ${b.sentToday}/${c.broadcastDailyLimit}</p>
     ${b.lastError ? `<p><small>Último error: ${esc(b.lastError)}</small></p>` : ''}
+    ${b.media ? `<p><small>Adjunto: ${esc(b.media.name)}</small></p>` : ''}
     ${b.status === 'running' ? `<form method="post" action="/s/${s.id}/broadcast/paused" class="inline"><button>Pausar</button></form>` : ''}
     ${b.status === 'paused' ? `<form method="post" action="/s/${s.id}/broadcast/running" class="inline"><button>Continuar</button></form>` : ''}
     ${bActive ? `<form method="post" action="/s/${s.id}/broadcast/cancelled" class="inline" onsubmit="return confirm('¿Cancelar el envío?')"><button class="danger">Cancelar</button></form>` : `
@@ -333,11 +334,36 @@ app.get('/s/:id', (req, res) => {
     <textarea name="kickMessage" rows="6">${esc(c.kickMessage)}</textarea><small id="ccount"></small>
       <label>Código de país para números de 10 dígitos sin +</label><input name="defaultCountryCode" value="${esc(c.defaultCountryCode)}" inputmode="numeric">
       <label>Mensaje ({nombre} = nombre del contacto)</label><textarea name="broadcastMessage" rows="4">${esc(c.broadcastMessage)}</textarea>
+      <label>Enlace (opcional, se agrega al final del mensaje)</label><input name="broadcastLink" type="url" placeholder="https://...">
+      <label>Foto, video o archivo (opcional, máximo 15 MB)</label><input type="file" id="mfile">
+      <input type="hidden" name="mediaName" id="mname"><input type="hidden" name="mediaType" id="mtype"><input type="hidden" name="mediaData" id="mdata">
+      <small id="minfo"></small>
       <label>Máximo por día</label><input name="broadcastDailyLimit" type="number" min="1" value="${c.broadcastDailyLimit}">
       <label>Pausa entre mensajes (segundos): mínimo y máximo</label>
       <div class="row"><input name="broadcastMinDelaySec" type="number" min="5" value="${c.broadcastMinDelaySec}"><input name="broadcastMaxDelaySec" type="number" min="5" value="${c.broadcastMaxDelaySec}"></div>
       <button onclick="return confirm('¿Empezar el envío?')">Empezar envío</button>
     </form>
+    <script>
+    (function(){
+      var mf=document.getElementById('mfile');
+      if(!mf)return;
+      mf.addEventListener('change',function(){
+        var file=mf.files[0],info=document.getElementById('minfo');
+        document.getElementById('mdata').value='';
+        if(!file){info.textContent='';return;}
+        if(file.size>15*1024*1024){alert('El archivo pesa más de 15 MB. Elige uno más ligero.');mf.value='';info.textContent='';return;}
+        info.textContent='Cargando...';
+        var r=new FileReader();
+        r.onload=function(){
+          document.getElementById('mdata').value=String(r.result);
+          document.getElementById('mname').value=file.name;
+          document.getElementById('mtype').value=file.type||'';
+          info.textContent='Listo: '+file.name;
+        };
+        r.readAsDataURL(file);
+      });
+    })();
+    </script>
     <script>
     (function(){
       var f=document.getElementById('cfile'),t=document.getElementById('ctext'),c=document.getElementById('ccount');
@@ -452,7 +478,21 @@ app.post('/s/:id/broadcast/start', (req, res) => {
   c.broadcastMinDelaySec = Math.max(5, Number(b.broadcastMinDelaySec) || 20);
   c.broadcastMaxDelaySec = Math.max(c.broadcastMinDelaySec, Number(b.broadcastMaxDelaySec) || 45);
   s.save();
-  const r = s.startBroadcast(b.contacts);
+  let media = null;
+  const raw = String(b.mediaData || '');
+  const comma = raw.indexOf(',');
+  if (raw.startsWith('data:') && comma > 0) {
+    try {
+      const buf = Buffer.from(raw.slice(comma + 1), 'base64');
+      const name = path.basename(String(b.mediaName || 'archivo')).replace(/[^\w.\- ]+/g, '_').slice(0, 80) || 'archivo';
+      const mimetype = String(b.mediaType || 'application/octet-stream');
+      const kind = /^image\/(jpeg|png|webp)$/i.test(mimetype) ? 'image' : /^video\//i.test(mimetype) ? 'video' : 'document';
+      const file = path.join(s.dir, 'broadcast-media.bin');
+      fs.writeFileSync(file, buf);
+      media = { file, name, mimetype, kind };
+    } catch (e) { s.log('No se pudo guardar el archivo adjunto: ' + e.message); }
+  }
+  const r = s.startBroadcast(b.contacts, { link: String(b.broadcastLink || '').trim(), media });
   if (r?.error) s.log('No se inició el envío: ' + r.error);
   res.redirect('/s/' + s.id);
 });
