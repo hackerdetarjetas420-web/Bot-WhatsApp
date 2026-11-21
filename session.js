@@ -444,7 +444,7 @@ class Session {
     const isOwner = isPrivate && this.isAdmin(jid, m.key.participant, m.key.participantPn);
     if (isOwner && text) {
       const lowO = norm(text);
-      const esSaludo = /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|ola|holi|que onda|menu|info|inicio|empezar|start|probar|prueba|test|quien eres|que sabes|que puedes hacer|ayuda)\b/.test(lowO) || lowO.length <= 4;
+      const esSaludo = /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|ola|holi|que onda|menu|info|inicio|empezar|start|probar|prueba|test|quien eres|que sabes|que puedes hacer|ayuda)\b/.test(lowO) || (lowO.length <= 4 && !/^[.!/]/.test(text.trim()));
       if (esSaludo && c.ownerWelcome) {
         if (now - (this.greeted.get(jid) || 0) >= 60000 && this.isConnected) {  // 1 min para no repetir seguido
           this.greeted.set(jid, now); this.lastAuto.set(flKey, now);
@@ -457,13 +457,14 @@ class Session {
       }
       // si no es saludo, sigue el flujo normal para que el dueño pueda probar preguntas
     }
-    let reply = null;
+    let reply = null, fromTg = false;
     // Puente de Telegram: manda el mensaje a un bot de Telegram y usa su respuesta (si está activado).
     if (c.tgBridgeEnabled && c.tgBot && text && isPrivate) {
       try { await this.sock.sendPresenceUpdate('composing', jid); } catch {}
-      const cmd = String(c.tgCommand || '{texto}').replace(/\{texto\}/gi, text);
+      const cmd = String(c.tgCommand || '{texto}').replace(/\{texto\}/gi, () => text);
       const ans = await tgUser.relay(c.tgBot, cmd);
-      if (ans) reply = ans;
+      if (ans) { reply = ans; fromTg = true; }
+      else this.log('Puente Telegram sin respuesta: ' + (tgUser.lastError() || 'sin detalle') + ' (se usa la respuesta normal).');
     }
     if (!reply && text) {                                    // 1) palabra clave (aplica en privado y en grupo)
       const low = norm(text);
@@ -482,15 +483,15 @@ class Session {
     }
     if (!reply || !this.isConnected) return;
     // variantes: si la respuesta trae "||", elige una al azar para sonar más natural
-    if (reply.includes('||')) {
+    if (!fromTg && reply.includes('||')) {
       const opts = reply.split('||').map(x => x.trim()).filter(Boolean);
       if (opts.length) reply = opts[Math.floor(Math.random() * opts.length)];
     }
     const tipo = kind === 'imagen' ? 'foto' : (kind || 'mensaje');
-    reply = reply.replace(/\{tipo\}/gi, tipo).replace(/\\n/g, '\n');  // \n en el texto = salto de línea real
+    if (!fromTg) reply = reply.replace(/\{tipo\}/gi, tipo).replace(/\\n/g, '\n');  // \n en el texto = salto de línea real
     this.lastAuto.set(flKey, now);
     const who = jid.split('@')[0];
-    const am = /^audio:/i.exec(reply);                       // respuesta tipo audio:nombre.ogg
+    const am = fromTg ? null : /^audio:/i.exec(reply);                       // respuesta tipo audio:nombre.ogg
     if (am) {
       const name = path.basename(reply.slice(am[0].length).trim());
       let fp = null;
@@ -502,7 +503,7 @@ class Session {
       this.log('Audio (' + name + ') enviado a ' + who + '.');
       return;
     }
-    const vm = /^video:/i.exec(reply);                       // respuesta tipo video:nombre.mp4  (o  video:nombre.mp4 | texto)
+    const vm = fromTg ? null : /^video:/i.exec(reply);                       // respuesta tipo video:nombre.mp4  (o  video:nombre.mp4 | texto)
     if (vm) {
       const rest = reply.slice(vm[0].length).trim();
       const [fileRaw, ...capParts] = rest.split('|');
