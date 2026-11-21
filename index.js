@@ -300,6 +300,10 @@ app.get('/s/:id', (req, res) => {
     <input name="tgBot" value="${esc(c.tgBot || '')}" placeholder="@mibot">
     <label>Qué mandarle al bot ({texto} = el mensaje del cliente)</label>
     <input name="tgCommand" value="${esc(c.tgCommand || '{texto}')}" placeholder="{texto}  o  /comando {texto}">
+    <label>Frase fija del resultado final (opcional, ej. CONSULTA COMPLETADA)</label>
+    <input name="tgDoneText" value="${esc(c.tgDoneText || '')}" placeholder="vacío = detectar solo">
+    <label>Palabras de espera del bot (opcional, separadas por coma; vacío = las de siempre)</label>
+    <input name="tgWaitWords" value="${esc(c.tgWaitWords || '')}" placeholder="procesando, iniciando, consultando">
     <p><small>Requiere haber iniciado sesión de Telegram en la página principal.</small></p>
   </section>
   <section><h2>Moderación</h2>
@@ -402,6 +406,8 @@ app.post('/s/:id/save', (req, res) => {
   c.tgBridgeEnabled = b.tgBridgeEnabled === 'on';
   c.tgBot = String(b.tgBot || '').trim();
   c.tgCommand = String(b.tgCommand || '{texto}').trim() || '{texto}';
+  c.tgDoneText = String(b.tgDoneText || '').trim();
+  c.tgWaitWords = String(b.tgWaitWords || '').trim();
   c.autoReplyRules = String(b.autoReplyRules || '').split('\n').map(line => {
     const i = line.indexOf('=');
     if (i < 0) return null;
