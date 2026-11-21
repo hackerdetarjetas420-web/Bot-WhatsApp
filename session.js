@@ -67,6 +67,7 @@ const DEFAULTS = {
   tgBridgeEnabled: false,
   tgBot: '',
   tgCommand: '{texto}',
+  tgDoneText: '', tgWaitWords: '',
   ownerWelcome: '🤖 ¡Hola! Soy tu bot asistente 🙌\n\nEstoy entrenado con la información que cargamos para este número. Le respondo a tus clientes al instante, 24/7: dudas, servicios, precios, citas y más.\n\nPuedes probarme haciéndome preguntas como si fueras un cliente, por ejemplo:\n• "¿Qué servicios tienen?"\n• "¿Cuánto cuesta?"\n• "Quiero una cita"\n\nSi quieres que aprenda algo nuevo o cambie una respuesta, avísale a quien configura el bot. ¡Aquí ando para ayudarte! 💪',
   respectEnabled: true,
   respectMessage: '🙅 Disculpa, no puedo seguir una conversación vulgar. Te pido respeto para poder ayudarte 🙏 Si quieres que te siga atendiendo, hablemos con cordialidad.',
@@ -412,6 +413,14 @@ class Session {
     const c = this.config;
     const jid = m.key.remoteJid;
     if (!this.rentalOk || !c.autoReplyEnabled || !jid || m.key.fromMe) return;
+    // Mismo mensaje entregado dos veces por WhatsApp (reconexiones): se atiende una sola vez.
+    if (m.key.id) {
+      this.seenIds = this.seenIds || new Map();
+      const sk = jid + ':' + m.key.id;
+      if (this.seenIds.has(sk)) return;
+      this.seenIds.set(sk, Date.now());
+      if (this.seenIds.size > 2000) { const cut = Date.now() - 10 * 60000; for (const [k, t] of this.seenIds) if (t < cut) this.seenIds.delete(k); }
+    }
     const isGroup = jid.endsWith('@g.us');
     const isPrivate = /@(s\.whatsapp\.net|lid)$/.test(jid);
     if (isGroup) { if (!c.autoReplyGroups || !this.isManagedGroup(jid) || !this.mentionsMe(m)) return; } // en grupos: activado, grupo marcado y que lo mencionen
@@ -460,11 +469,47 @@ class Session {
     let reply = null, fromTg = false;
     // Puente de Telegram: manda el mensaje a un bot de Telegram y usa su respuesta (si está activado).
     if (c.tgBridgeEnabled && c.tgBot && text && isPrivate) {
-      try { await this.sock.sendPresenceUpdate('composing', jid); } catch {}
-      const cmd = String(c.tgCommand || '{texto}').replace(/\{texto\}/gi, () => text);
-      const ans = await tgUser.relay(c.tgBot, cmd);
-      if (ans) { reply = ans; fromTg = true; }
-      else this.log('Puente Telegram sin respuesta: ' + (tgUser.lastError() || 'sin detalle') + ' (se usa la respuesta normal).');
+      this.tgBusy = this.tgBusy || new Set();
+      this.tgBusyAt = this.tgBusyAt || new Map();
+      if (this.tgBusy.has(jid)) {
+        // Este cliente ya tiene una consulta en curso: no se lanza otra (evita duplicados y mezclas).
+        if (now - (this.tgBusyAt.get(jid) || 0) > 20000 && this.isConnected) {
+          this.tgBusyAt.set(jid, now);
+          await this.sock.sendMessage(jid, { text: '⏳ Sigo procesando tu consulta anterior. En cuanto termine te la envío.' });
+        }
+        this.log('Consulta ignorada de ' + jid.split('@')[0] + ': ya tiene otra en proceso.');
+        return;
+      }
+      this.tgBusy.add(jid);
+      try {
+        try { await this.sock.sendPresenceUpdate('composing', jid); } catch {}
+        const cmd = String(c.tgCommand || '{texto}').replace(/\{texto\}/gi, () => text);
+        const who0 = jid.split('@')[0];
+        this.log('Consulta enviada a Telegram (' + c.tgBot + ') por ' + who0 + '.');
+        const r = await tgUser.relay(c.tgBot, cmd, {
+          doneText: c.tgDoneText,
+          waitWords: String(c.tgWaitWords || '').split(',').map(x => x.trim()).filter(Boolean),
+          onLate: async late => {     // respuesta que llegó pasado el tiempo: va al MISMO chat de origen
+            if (!this.isConnected) { this.log('⚠️ Respuesta tardía de Telegram para ' + who0 + ' descartada: WhatsApp desconectado.'); return; }
+            await this.sock.sendMessage(jid, { text: '⏱️ Respuesta a tu consulta anterior:\n\n' + late });
+            this.log('Respuesta tardía de Telegram enviada a ' + who0 + '.');
+          },
+          onGiveUp: why => this.log('Telegram: no llegó el resultado para ' + who0 + '. ' + why)
+        });
+        this.lastAuto.set(flKey, now);
+        if (r.status === 'ok') { reply = r.text; fromTg = true; this.log('Respuesta de Telegram recibida para ' + who0 + '.'); }
+        else if (r.status === 'pending') {
+          this.log('Telegram tarda para ' + who0 + ': se sigue esperando.');
+          if (this.isConnected) await this.sock.sendMessage(jid, { text: '⏳ Tu consulta sigue en proceso. Te envío el resultado en cuanto esté listo.' });
+          return;
+        } else if (r.status === 'failed') {
+          this.log('Telegram falló para ' + who0 + ': ' + (tgUser.lastError() || 'sin detalle'));
+          if (this.isConnected) await this.sock.sendMessage(jid, { text: '⚠️ No pude obtener el resultado en este momento. Intenta de nuevo en un rato.' });
+          return;
+        } else {
+          this.log('Puente Telegram no disponible: ' + (tgUser.lastError() || 'sin detalle') + ' (se usa la respuesta normal).');
+        }
+      } finally { this.tgBusy.delete(jid); }
     }
     if (!reply && text) {                                    // 1) palabra clave (aplica en privado y en grupo)
       const low = norm(text);
@@ -481,6 +526,7 @@ class Session {
       if (!/\?|\¿/.test(text)) return;                        // si no es una pregunta (un "no", "ok"...), no responde
       reply = c.autoReplyGroupHint || '👋 ¿En qué te ayudo?';  // si es pregunta, un mensaje corto
     }
+    if (fromTg && reply && !this.isConnected) { this.log('⚠️ Respuesta de Telegram descartada: WhatsApp está desconectado.'); return; }
     if (!reply || !this.isConnected) return;
     // variantes: si la respuesta trae "||", elige una al azar para sonar más natural
     if (!fromTg && reply.includes('||')) {
