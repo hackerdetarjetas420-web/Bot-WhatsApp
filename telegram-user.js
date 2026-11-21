@@ -127,32 +127,60 @@ async function logout() {
   statusText = 'Sesión cerrada';
 }
 
-// Manda `text` al bot de Telegram (ej. "@mibot") y espera su respuesta. Devuelve texto o null.
-async function relay(botUsername, text, timeoutMs = 25000) {
-  if (!ready()) { if (!(await connectSaved())) return null; }
-  if (!ready()) return null;
+// Último motivo por el que relay() no devolvió texto (para mostrarlo en el registro del panel).
+let lastErr = '';
+function lastError() { return lastErr; }
+
+// Avisos de "espera" que algunos bots mandan antes del resultado real (no son la respuesta final).
+const isPlaceholder = t => t.length < 90 && /(procesando|consultando|cargando|espera|un momento|buscando|verificando|checking|processing|loading|please wait|wait|⏳|⌛)/i.test(t);
+
+// Un solo relay a la vez: si llegan 2 clientes juntos, las respuestas del bot no se mezclan.
+let relayChain = Promise.resolve();
+function relay(botUsername, text, timeoutMs = 45000) {
+  const run = relayChain.then(() => doRelay(botUsername, text, timeoutMs));
+  relayChain = run.catch(() => {});
+  return run;
+}
+
+// Manda `text` al bot de Telegram (ej. "@mibot") y espera su respuesta FINAL. Devuelve texto o null.
+// Espera a que el bot deje de escribir/editar (3 s de calma), ignora avisos tipo "Procesando…"
+// y lee mensajes editados (muchos bots editan el mismo mensaje con el resultado).
+async function doRelay(botUsername, text, timeoutMs) {
+  lastErr = '';
+  if (!configured()) { lastErr = 'Faltan TELEGRAM_API_ID / TELEGRAM_API_HASH.'; return null; }
+  if (!ready()) { if (!(await connectSaved())) { lastErr = 'Telegram no está conectado: ' + statusText; return null; } }
+  if (!ready()) { lastErr = 'Telegram no está conectado: ' + statusText; return null; }
   const uname = String(botUsername).trim().replace(/^@/, '');
-  if (!uname) return null;
+  if (!uname) { lastErr = 'No hay bot destino configurado.'; return null; }
   try {
     const bot = await client.getEntity(uname);
     const before = await client.getMessages(bot, { limit: 1 });
     const beforeId = before && before[0] ? before[0].id : 0;
     await client.sendMessage(bot, { message: String(text) });
     const deadline = Date.now() + timeoutMs;
+    let lastSnap = '', lastChange = Date.now(), real = [], sawMedia = false, sawPlaceholder = false;
     while (Date.now() < deadline) {
-      await sleep(1500);
-      const msgs = await client.getMessages(bot, { limit: 4 });
-      const nuevos = (msgs || []).filter(m => m && !m.out && m.id > beforeId && (m.message || '').trim());
-      if (nuevos.length) {
-        nuevos.sort((a, b) => a.id - b.id);
-        return nuevos.map(m => m.message).join('\n\n').trim();
-      }
+      await sleep(1200);
+      const msgs = await client.getMessages(bot, { limit: 10 });
+      const nuevos = (msgs || []).filter(m => m && !m.out && m.id > beforeId).sort((a, b) => a.id - b.id);
+      const snap = JSON.stringify(nuevos.map(m => [m.id, m.message || '', m.editDate || 0, Boolean(m.media)]));
+      if (snap !== lastSnap) { lastSnap = snap; lastChange = Date.now(); }
+      const texts = nuevos.map(m => (m.message || '').trim()).filter(Boolean);
+      real = texts.filter(t => !isPlaceholder(t));
+      sawPlaceholder = texts.length > real.length;
+      sawMedia = nuevos.some(m => m.media && !(m.message || '').trim());
+      if (real.length && Date.now() - lastChange >= 3000) return real.join('\n\n').trim();
     }
+    if (real.length) return real.join('\n\n').trim();
+    lastErr = sawPlaceholder ? 'El bot solo mandó un aviso de espera y no el resultado en ' + Math.round(timeoutMs / 1000) + ' s.'
+      : sawMedia ? 'El bot respondió con un archivo/imagen sin texto (el puente solo reenvía texto).'
+      : 'El bot de Telegram no respondió en ' + Math.round(timeoutMs / 1000) + ' s.';
     return null;
   } catch (e) {
-    console.error('[TG-Usuario] Error al consultar al bot ' + uname + ': ' + (e?.message || e));
+    lastErr = 'Error al consultar a ' + uname + ': ' + (e?.message || e);
+    console.error('[TG-Usuario] ' + lastErr);
     return null;
   }
 }
 
-module.exports = { init, configured, ready, status, connectSaved, sendCode, signIn, logout, relay };
+module.exports = { init, configured, ready, status, connectSaved, sendCode, signIn, logout, relay, lastError };
