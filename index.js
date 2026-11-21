@@ -70,7 +70,7 @@ for (const id of fs.readdirSync(SESS_DIR)) {
 // Puente de Telegram → WhatsApp: reenvía a los números que lo tengan activado.
 startTelegramBridge(async ({ text }) => {
   const targets = [...sessions.values()].filter(s => s.config.telegramBridgeEnabled && s.isConnected && s.rentalOk && s.config.telegramGroupJid);
-  if (!targets.length) return;
+  if (!targets.length) { console.info('[Telegram] Llegó un mensaje del canal pero ningún número lo tiene activado/conectado con grupo destino.'); return; }
   for (const s of targets) { try { await s.forwardTelegram(text); } catch (e) { s.log('Error al reenviar de Telegram: ' + e.message); } }
 });
 
