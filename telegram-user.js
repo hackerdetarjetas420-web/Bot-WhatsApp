@@ -131,56 +131,115 @@ async function logout() {
 let lastErr = '';
 function lastError() { return lastErr; }
 
-// Avisos de "espera" que algunos bots mandan antes del resultado real (no son la respuesta final).
-const isPlaceholder = t => t.length < 90 && /(procesando|consultando|cargando|espera|un momento|buscando|verificando|checking|processing|loading|please wait|wait|⏳|⌛)/i.test(t);
+// Palabras que delatan un mensaje de "espera" (el bot aún no terminó). Se pueden cambiar desde el panel.
+const DEFAULT_WAIT = ['procesando', 'consultando', 'cargando', 'iniciando', 'buscando', 'verificando', 'analizando',
+  'un momento', 'espera', 'processing', 'loading', 'searching', 'please wait', 'wait', '⏳', '⌛'];
 
-// Un solo relay a la vez: si llegan 2 clientes juntos, las respuestas del bot no se mezclan.
-let relayChain = Promise.resolve();
-function relay(botUsername, text, timeoutMs = 45000) {
-  const run = relayChain.then(() => doRelay(botUsername, text, timeoutMs));
-  relayChain = run.catch(() => {});
-  return run;
+// ¿El texto ya es el resultado final? Si hay "doneText" (frase fija del resultado), manda esa frase.
+function isFinal(text, o) {
+  const low = String(text || '').trim().toLowerCase();
+  if (!low) return false;
+  if (o.doneText) return low.includes(String(o.doneText).toLowerCase());
+  return !(low.length < 160 && o.waitWords.some(w => low.includes(w)));
 }
 
-// Manda `text` al bot de Telegram (ej. "@mibot") y espera su respuesta FINAL. Devuelve texto o null.
-// Espera a que el bot deje de escribir/editar (3 s de calma), ignora avisos tipo "Procesando…"
-// y lee mensajes editados (muchos bots editan el mismo mensaje con el resultado).
-async function doRelay(botUsername, text, timeoutMs) {
+// Candado: solo UNA consulta a la vez mientras se reclama su "boleto" (el primer mensaje del bot tras enviarla).
+let lockChain = Promise.resolve();
+function lock() {
+  let release; const gate = new Promise(r => { release = r; });
+  const prev = lockChain;
+  lockChain = prev.then(() => gate);
+  return prev.then(() => release);
+}
+const claimed = new Set();   // mensajes del bot que ya pertenecen a una consulta (bot:id)
+const claim = k => { claimed.add(k); if (claimed.size > 500) claimed.delete(claimed.values().next().value); };
+
+// Manda `text` al bot de Telegram (ej. "@mibot") y devuelve la respuesta de ESA consulta.
+// Cada consulta se amarra al mensaje del bot que la contesta (el "Procesando…") y se sigue SOLO ese mensaje
+// hasta que se edita con el resultado; así una respuesta tardía no se cuela en la consulta de otra persona.
+// Devuelve { status, text? }:
+//   'ok'      → resultado final en `text`
+//   'pending' → pasó el tiempo, pero se sigue vigilando; si llega, se entrega con o.onLate(texto)
+//   'failed'  → la consulta SÍ se envió pero no hubo resultado (el motivo queda en lastError())
+//   'unsent'  → no se pudo ni enviar (Telegram desconectado, sin configurar…)
+async function relay(botUsername, text, o = {}) {
+  const opt = {
+    timeoutMs: o.timeoutMs || 45000, claimMs: o.claimMs || 20000, quietMs: o.quietMs ?? 3000,
+    pollMs: o.pollMs || 1200, claimPollMs: o.claimPollMs || 700, lateMs: o.lateMs ?? 180000, latePollMs: o.latePollMs || 4000,
+    doneText: String(o.doneText || '').trim(),
+    waitWords: (Array.isArray(o.waitWords) && o.waitWords.length ? o.waitWords : DEFAULT_WAIT).map(w => String(w).toLowerCase()),
+    onLate: typeof o.onLate === 'function' ? o.onLate : null,
+    onGiveUp: typeof o.onGiveUp === 'function' ? o.onGiveUp : null
+  };
   lastErr = '';
-  if (!configured()) { lastErr = 'Faltan TELEGRAM_API_ID / TELEGRAM_API_HASH.'; return null; }
-  if (!ready()) { if (!(await connectSaved())) { lastErr = 'Telegram no está conectado: ' + statusText; return null; } }
-  if (!ready()) { lastErr = 'Telegram no está conectado: ' + statusText; return null; }
+  if (!configured()) { lastErr = 'Faltan TELEGRAM_API_ID / TELEGRAM_API_HASH.'; return { status: 'unsent' }; }
+  if (!ready()) { if (!(await connectSaved()) || !ready()) { lastErr = 'Telegram no está conectado: ' + statusText; return { status: 'unsent' }; } }
   const uname = String(botUsername).trim().replace(/^@/, '');
-  if (!uname) { lastErr = 'No hay bot destino configurado.'; return null; }
+  if (!uname) { lastErr = 'No hay bot destino configurado.'; return { status: 'unsent' }; }
+  const key = id => uname.toLowerCase() + ':' + id;
+
+  const release = await lock();
+  let released = false;
+  const free = () => { if (!released) { released = true; release(); } };
+  let bot, ticket = 0;
   try {
-    const bot = await client.getEntity(uname);
-    const before = await client.getMessages(bot, { limit: 1 });
-    const beforeId = before && before[0] ? before[0].id : 0;
-    await client.sendMessage(bot, { message: String(text) });
-    const deadline = Date.now() + timeoutMs;
-    let lastSnap = '', lastChange = Date.now(), real = [], sawMedia = false, sawPlaceholder = false;
-    while (Date.now() < deadline) {
-      await sleep(1200);
-      const msgs = await client.getMessages(bot, { limit: 10 });
-      const nuevos = (msgs || []).filter(m => m && !m.out && m.id > beforeId).sort((a, b) => a.id - b.id);
-      const snap = JSON.stringify(nuevos.map(m => [m.id, m.message || '', m.editDate || 0, Boolean(m.media)]));
-      if (snap !== lastSnap) { lastSnap = snap; lastChange = Date.now(); }
-      const texts = nuevos.map(m => (m.message || '').trim()).filter(Boolean);
-      real = texts.filter(t => !isPlaceholder(t));
-      sawPlaceholder = texts.length > real.length;
-      sawMedia = nuevos.some(m => m.media && !(m.message || '').trim());
-      if (real.length && Date.now() - lastChange >= 3000) return real.join('\n\n').trim();
+    try {
+      bot = await client.getEntity(uname);
+      const before = await client.getMessages(bot, { limit: 1 });
+      const beforeId = before && before[0] ? before[0].id : 0;
+      const sent = await client.sendMessage(bot, { message: String(text) });
+      const floor = (sent && sent.id) || beforeId;
+      // 1) reclamar el "boleto": el primer mensaje nuevo del bot que nadie más reclamó.
+      const t0 = Date.now();
+      while (Date.now() - t0 < opt.claimMs && !ticket) {
+        await sleep(opt.claimPollMs);
+        const msgs = await client.getMessages(bot, { limit: 10 });
+        const cand = (msgs || []).filter(m => m && !m.out && m.id > floor && !claimed.has(key(m.id))).sort((a, b) => a.id - b.id)[0];
+        if (cand) { ticket = cand.id; claim(key(ticket)); }
+      }
+    } catch (e) {
+      lastErr = 'Error al consultar a ' + uname + ': ' + (e?.message || e);
+      console.error('[TG-Usuario] ' + lastErr);
+      return { status: ticket ? 'failed' : 'unsent' };
     }
-    if (real.length) return real.join('\n\n').trim();
-    lastErr = sawPlaceholder ? 'El bot solo mandó un aviso de espera y no el resultado en ' + Math.round(timeoutMs / 1000) + ' s.'
-      : sawMedia ? 'El bot respondió con un archivo/imagen sin texto (el puente solo reenvía texto).'
-      : 'El bot de Telegram no respondió en ' + Math.round(timeoutMs / 1000) + ' s.';
-    return null;
-  } catch (e) {
-    lastErr = 'Error al consultar a ' + uname + ': ' + (e?.message || e);
-    console.error('[TG-Usuario] ' + lastErr);
-    return null;
+    if (!ticket) { lastErr = 'El bot no contestó en ' + Math.round(opt.claimMs / 1000) + ' s.'; return { status: 'failed' }; }
+  } finally { free(); }   // ya reclamado: la siguiente consulta puede enviarse
+
+  // 2) seguir SOLO ese mensaje hasta que sea el resultado final y deje de cambiar.
+  const watch = async (deadline, pollMs) => {
+    let lastSnap = '', lastChange = Date.now(), lastText = '', media = false;
+    while (Date.now() < deadline) {
+      await sleep(pollMs);
+      let m = null;
+      try { const r = await client.getMessages(bot, { ids: [ticket] }); m = r && r[0]; } catch (e) { continue; }
+      if (!m) continue;
+      const t = (m.message || '').trim();
+      media = Boolean(m.media) && !t;
+      const snap = JSON.stringify([t, m.editDate || 0, Boolean(m.media)]);
+      if (snap !== lastSnap) { lastSnap = snap; lastChange = Date.now(); }
+      lastText = t;
+      if (isFinal(t, opt) && Date.now() - lastChange >= opt.quietMs) return { text: t };
+    }
+    return { text: '', lastText, media };
+  };
+  const why = r => r.media ? 'El bot respondió con un archivo/imagen sin texto (el puente solo reenvía texto).'
+    : r.lastText ? 'El bot se quedó en un aviso de espera: "' + r.lastText.slice(0, 60) + '".'
+    : 'El bot no entregó el resultado.';
+
+  const r1 = await watch(Date.now() + opt.timeoutMs, opt.pollMs);
+  if (r1.text) return { status: 'ok', text: r1.text };
+  if (opt.onLate && opt.lateMs > 0) {
+    // 3) respuesta tardía: se sigue vigilando el mismo mensaje en segundo plano.
+    (async () => {
+      const r2 = await watch(Date.now() + opt.lateMs, opt.latePollMs);
+      if (r2.text) await opt.onLate(r2.text);
+      else if (opt.onGiveUp) opt.onGiveUp(why(r2));
+    })().catch(e => { try { opt.onGiveUp && opt.onGiveUp('Error al vigilar la respuesta tardía: ' + (e?.message || e)); } catch {} });
+    lastErr = 'Sigue en proceso; se entregará si llega.';
+    return { status: 'pending' };
   }
+  lastErr = why(r1);
+  return { status: 'failed' };
 }
 
 module.exports = { init, configured, ready, status, connectSaved, sendCode, signIn, logout, relay, lastError };
