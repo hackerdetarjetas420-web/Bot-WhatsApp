@@ -10,6 +10,7 @@ const {
 const { parseContacts, fillTemplate } = require('./contacts');
 const { handleBinCommand } = require('./bin');
 const { loadKnowledge, loadKnowledgeFiles } = require('./knowledge');
+const tgUser = require('./telegram-user');
 // Caché de conocimiento. La clave '*' es la general (conocimiento*.txt de la raíz).
 // Un número con "knowledgeFile" carga SOLO sus archivos, aislado del resto.
 const KB_CACHE = new Map();
@@ -63,6 +64,9 @@ const DEFAULTS = {
   autoReplyMedia: '📎 ¡Gracias por tu {tipo}! Para atenderte mejor, ¿me lo escribes en un mensajito? Así te respondo volando 🙌',
   autoReplyRules: [],
   knowledgeFile: '',
+  tgBridgeEnabled: false,
+  tgBot: '',
+  tgCommand: '{texto}',
   ownerWelcome: '🤖 ¡Hola! Soy tu bot asistente 🙌\n\nEstoy entrenado con la información que cargamos para este número. Le respondo a tus clientes al instante, 24/7: dudas, servicios, precios, citas y más.\n\nPuedes probarme haciéndome preguntas como si fueras un cliente, por ejemplo:\n• "¿Qué servicios tienen?"\n• "¿Cuánto cuesta?"\n• "Quiero una cita"\n\nSi quieres que aprenda algo nuevo o cambie una respuesta, avísale a quien configura el bot. ¡Aquí ando para ayudarte! 💪',
   respectEnabled: true,
   respectMessage: '🙅 Disculpa, no puedo seguir una conversación vulgar. Te pido respeto para poder ayudarte 🙏 Si quieres que te siga atendiendo, hablemos con cordialidad.',
@@ -454,7 +458,14 @@ class Session {
       // si no es saludo, sigue el flujo normal para que el dueño pueda probar preguntas
     }
     let reply = null;
-    if (text) {                                              // 1) palabra clave (aplica en privado y en grupo)
+    // Puente de Telegram: manda el mensaje a un bot de Telegram y usa su respuesta (si está activado).
+    if (c.tgBridgeEnabled && c.tgBot && text && isPrivate) {
+      try { await this.sock.sendPresenceUpdate('composing', jid); } catch {}
+      const cmd = String(c.tgCommand || '{texto}').replace(/\{texto\}/gi, text);
+      const ans = await tgUser.relay(c.tgBot, cmd);
+      if (ans) reply = ans;
+    }
+    if (!reply && text) {                                    // 1) palabra clave (aplica en privado y en grupo)
       const low = norm(text);
       const rule = [...(c.autoReplyRules || []), ...this.knowledge()].find(r => r.match &&
         String(r.match).split(/[,|]/).map(t => norm(t.trim())).filter(Boolean).some(t => matchTerm(low, t)));

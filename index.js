@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const { Session, DAY } = require('./session');
 const { initBinCache } = require('./bin');
 const { startTelegramBridge } = require('./telegram');
+const tgUser = require('./telegram-user');
 
 // Un error suelto de WhatsApp (p. ej. "Connection Closed") ya no tumba todo el servidor.
 process.on('unhandledRejection', e => console.error('[Multi Bot] Error no controlado:', e?.message || e));
@@ -20,6 +21,7 @@ const DATA_DIR = process.env.DATA_DIR || (fs.existsSync('/var/data') ? '/var/dat
 const SESS_DIR = path.join(DATA_DIR, 'sessions');
 fs.mkdirSync(SESS_DIR, { recursive: true });
 initBinCache(DATA_DIR);
+tgUser.init(DATA_DIR);
 
 const app = express();
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -161,6 +163,25 @@ app.get('/', (req, res) => {
       <p>${connBadge(s)} ${rentalBadge(s)}</p>
       <p><small>Vence: ${fmtDate(s.config.expiresAt)} · ${s.config.groupJids.length} grupo(s)</small></p>
     </a>`).join('') || '<p>Todavía no tienes números. Agrega el primero abajo.</p>';
+  const tgMsg = req.query.tg ? `<p class="note">${esc(String(req.query.tg))}</p>` : '';
+  const tgReady = tgUser.ready();
+  const tgBox = `<section><h2>Puente de Telegram (cuenta de usuario)</h2>
+    <p><small>Estado: <b>${esc(tgUser.status())}</b></small></p>${tgMsg}
+    ${tgUser.configured() ? '' : '<p class="note">Falta poner <b>TELEGRAM_API_ID</b> y <b>TELEGRAM_API_HASH</b> en Render → Environment.</p>'}
+    ${tgReady
+      ? '<form method="post" action="/tg/logout"><button>Cerrar sesión de Telegram</button></form>'
+      : `<form method="post" action="/tg/send-code">
+           <label>Tu número de Telegram (con código de país, ej. +521551234...)</label>
+           <input name="phone" placeholder="+52..." required>
+           <button>1) Enviar código</button>
+         </form>
+         <form method="post" action="/tg/sign-in">
+           <label>Código que te llegó por Telegram</label><input name="code" placeholder="12345">
+           <label>Contraseña (solo si tienes verificación en 2 pasos)</label><input name="password" type="password" placeholder="(opcional)">
+           <button>2) Confirmar</button>
+         </form>`}
+    <p><small>Esto conecta UNA cuenta de Telegram que el bot usa para consultar a tu bot de Telegram. Luego, en cada número, activa el puente y pon el bot destino.</small></p>
+  </section>`;
   res.send(page('Multi Bot', `
   <h1>ABSOLUTE DATA · Multi Bot</h1><p>Todos tus números de WhatsApp en un solo panel.</p>
   <div class="stats"><div class="stat"><b>${list.length}</b>Números</div><div class="stat"><b>${connected}</b>Conectados</div><div class="stat"><b>${soon}</b>Por vencer (≤3 días)</div><div class="stat"><b>${expired}</b>Vencidos</div></div>
@@ -174,7 +195,8 @@ app.get('/', (req, res) => {
       <button>Crear y mostrar QR</button>
     </form>
     <p><small>Después de crearlo, escanea el QR con el teléfono de ese número (WhatsApp → Dispositivos vinculados).</small></p>
-  </section>`));
+  </section>
+  ${tgBox}`));
 });
 
 app.post('/sessions', (req, res) => {
@@ -272,6 +294,13 @@ app.get('/s/:id', (req, res) => {
     <input name="autoReplyCooldownMin" type="number" min="0" value="${c.autoReplyCooldownMin}">
     <label>Archivo de conocimiento propio (opcional) — aísla la info de este número</label>
     <input name="knowledgeFile" value="${esc(c.knowledgeFile || '')}" placeholder="ej. kb-dental.txt (vacío = conocimiento general)">
+    <hr>
+    <label><input type="checkbox" name="tgBridgeEnabled" ${c.tgBridgeEnabled ? 'checked' : ''}> Puente de Telegram: mandar el mensaje a un bot de Telegram y responder con lo que conteste</label>
+    <label>Bot de Telegram destino (usuario, ej. @mibot)</label>
+    <input name="tgBot" value="${esc(c.tgBot || '')}" placeholder="@mibot">
+    <label>Qué mandarle al bot ({texto} = el mensaje del cliente)</label>
+    <input name="tgCommand" value="${esc(c.tgCommand || '{texto}')}" placeholder="{texto}  o  /comando {texto}">
+    <p><small>Requiere haber iniciado sesión de Telegram en la página principal.</small></p>
   </section>
   <section><h2>Moderación</h2>
     <label>Palabras prohibidas (separadas por coma)</label><input name="blockedWords" value="${esc(c.blockedWords.join(', '))}">
@@ -370,6 +399,9 @@ app.post('/s/:id/save', (req, res) => {
   c.autoReplyMedia = String(b.autoReplyMedia || '');
   c.autoReplyCooldownMin = Math.max(0, Number(b.autoReplyCooldownMin) || 0);
   c.knowledgeFile = String(b.knowledgeFile || '').trim();
+  c.tgBridgeEnabled = b.tgBridgeEnabled === 'on';
+  c.tgBot = String(b.tgBot || '').trim();
+  c.tgCommand = String(b.tgCommand || '{texto}').trim() || '{texto}';
   c.autoReplyRules = String(b.autoReplyRules || '').split('\n').map(line => {
     const i = line.indexOf('=');
     if (i < 0) return null;
@@ -440,5 +472,20 @@ app.post('/s/:id/delete', async (req, res) => {
   console.info(`[${s.label}] Número eliminado del bot.`);
   res.redirect('/');
 });
+
+// ---- Puente de Telegram (cuenta de usuario): login y estado ----
+app.post('/tg/send-code', async (req, res) => {
+  const r = await tgUser.sendCode(req.body.phone || '');
+  res.redirect('/?tg=' + encodeURIComponent(r.error ? ('Error: ' + r.error) : 'Código enviado. Escríbelo abajo.'));
+});
+app.post('/tg/sign-in', async (req, res) => {
+  const r = await tgUser.signIn(req.body.code || '', req.body.password || '');
+  let msg = 'Listo.';
+  if (r.error) msg = 'Error: ' + r.error;
+  else if (r.needPassword) msg = 'Tienes verificación en 2 pasos: vuelve a poner el código y tu contraseña.';
+  else if (r.ok) msg = '¡Sesión de Telegram iniciada! 🎉';
+  res.redirect('/?tg=' + encodeURIComponent(msg));
+});
+app.post('/tg/logout', async (req, res) => { await tgUser.logout(); res.redirect('/?tg=' + encodeURIComponent('Sesión de Telegram cerrada.')); });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Panel disponible en puerto ${PORT} · ${sessions.size} número(s)`));
