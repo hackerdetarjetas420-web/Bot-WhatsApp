@@ -12,7 +12,9 @@ const API = m => `https://api.telegram.org/bot${TOKEN}/${m}`;
 const extractText = msg => (msg && (msg.text || msg.caption)) || '';
 
 async function startTelegramBridge(onMessage, log = console.info) {
-  if (!TOKEN) return false;
+  if (!TOKEN) { log('[Telegram] Puente de canal apagado: falta la variable TELEGRAM_BOT_TOKEN.'); return false; }
+  // Si el bot tuviera un webhook puesto, getUpdates no recibe nada: se quita.
+  try { await fetch(API('deleteWebhook'), { signal: AbortSignal.timeout(15000) }); } catch {}
   log('[Telegram] Puente iniciado' + (SOURCE ? ` (solo chat ${SOURCE})` : '') + '.');
   let offset = 0, fail = 0;
   (async function loop() {
@@ -42,6 +44,7 @@ async function startTelegramBridge(onMessage, log = console.info) {
         }
       } catch (e) {
         fail++;
+        if (fail === 1 || fail % 10 === 0) log('[Telegram] Error de red/lectura: ' + (e?.message || e));
         await sleep(Math.min(60000, 3000 * fail));
       }
     }
@@ -50,3 +53,4 @@ async function startTelegramBridge(onMessage, log = console.info) {
 }
 
 module.exports = { startTelegramBridge };
+
