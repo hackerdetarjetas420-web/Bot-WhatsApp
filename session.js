@@ -35,6 +35,90 @@ const reEscape = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const matchTerm = (low, term) => term.length <= 3
   ? new RegExp('(^|[^a-z0-9])' + reEscape(term) + '($|[^a-z0-9])').test(low)
   : low.includes(term);
+
+// ---- Comprensión sin IA: sinónimos, errores de escritura y memoria del tema ----
+// La primera palabra de cada grupo es la "canónica"; las demás se convierten a ella.
+const SYN_GROUPS = [
+  ['precio', 'costo', 'cuesta', 'cuestan', 'cuanto sale', 'cuanto cobran', 'cuanto es', 'tarifa', 'tarifas', 'valor', 'precios', 'costos'],
+  ['cita', 'agendar', 'reservar', 'reservacion', 'turno', 'apartar', 'citas'],
+  ['horario', 'horarios', 'a que hora', 'hora de atencion', 'cuando abren', 'cuando atienden', 'abierto'],
+  ['ubicacion', 'direccion', 'donde estan', 'donde quedan', 'donde se ubican', 'domicilio', 'como llegar'],
+  ['telefono', 'numero', 'celular', 'whatsapp', 'contacto'],
+  ['servicio', 'servicios', 'tratamientos', 'que ofrecen', 'que hacen', 'que manejan'],
+  ['pago', 'pagos', 'tarjeta', 'efectivo', 'transferencia', 'formas de pago', 'metodos de pago'],
+  ['promocion', 'promociones', 'oferta', 'ofertas', 'descuento', 'descuentos', 'promo', 'promos']
+];
+const SYN_MAP = (() => {
+  const list = [];
+  for (const g of SYN_GROUPS) for (const w of g.slice(1)) list.push([w, g[0]]);
+  return list.sort((a, b) => b[0].length - a[0].length);   // frases largas primero
+})();
+const STOPWORDS = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'de', 'del', 'en', 'y', 'o', 'a', 'al', 'por', 'para', 'con', 'que', 'es', 'me', 'mi', 'su', 'se', 'lo', 'le', 'quiero', 'quisiera', 'necesito', 'saber', 'tienen', 'hay', 'ya']);
+const GENERIC_WORDS = new Set(['precio', 'cita', 'horario', 'ubicacion', 'telefono', 'servicio', 'pago', 'promocion', 'hola', 'gracias', 'info', 'informacion']);
+const canon = t => {
+  let x = ' ' + norm(t).replace(/[^a-z0-9ñ ]+/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+  for (const [from, to] of SYN_MAP) x = x.split(' ' + from + ' ').join(' ' + to + ' ');
+  return x.trim();
+};
+const tokens = t => canon(t).split(' ').filter(w => w && !STOPWORDS.has(w));
+// Distancia de edición con tope (para "presio", "ortodonsia", "kiero"...)
+const lev = (a, b, max) => {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+};
+// Suena igual aunque se escriba distinto: "sita" = "cita", "bernes" = "viernes", "kiero" = "quiero"
+const phon = w => w.replace(/qu/g, 'k').replace(/c(?=[aoulr])/g, 'k').replace(/c/g, 's').replace(/z/g, 's').replace(/v/g, 'b').replace(/h/g, '').replace(/ll/g, 'y').replace(/ñ/g, 'n').replace(/(.)\1+/g, '$1');
+const wordMatch = (qw, tw) => {
+  if (qw === tw) return true;
+  if (qw.length >= 3 && tw.length >= 3 && phon(qw) === phon(tw)) return true;
+  if (tw.length < 5 || qw.length < 4) return false;            // palabras cortas: solo exactas
+  const max = tw.length >= 9 ? 2 : 1;
+  return lev(qw, tw, max) <= max;
+};
+// Elige la mejor regla. Prioriza la coincidencia más específica y, si el mensaje es corto
+// ("¿y cuánto cuesta?"), usa el tema de la conversación (ctx) para completar lo que falta.
+function findRule(rules, text, ctx) {
+  const low = norm(text);
+  const qWords = tokens(text);
+  const useCtx = Array.isArray(ctx) && ctx.length && qWords.length > 0 && qWords.length <= 6;
+  let best = null, bestScore = 0;
+  for (const r of rules) {
+    if (!r.match) continue;
+    for (const raw of String(r.match).split(/[,|]/)) {
+      const term = norm(raw.trim());
+      if (!term) continue;
+      let score = 0;
+      if (matchTerm(low, term)) score = 1000 + term.length;                  // coincidencia exacta
+      else {
+        const tw = tokens(term);
+        if (!tw.length) continue;
+        let fromText = 0, fromCtx = 0, ok = true;
+        for (const w of tw) {
+          if (qWords.some(q => wordMatch(q, w))) fromText++;
+          else if (useCtx && ctx.includes(w)) fromCtx++;
+          else { ok = false; break; }
+        }
+        if (!ok || !fromText) continue;
+        score = fromCtx ? 2000 + term.length : 500 + term.length;            // con tema de la plática, gana
+      }
+      if (score > bestScore) { bestScore = score; best = r; }
+    }
+  }
+  return best;
+}
+const topicWordsOf = rule => {
+  for (const raw of String(rule.match || '').split(/[,|]/)) {
+    const w = tokens(raw).filter(x => x.length >= 5 && !GENERIC_WORDS.has(x));
+    if (w.length) return w;
+  }
+  return [];
+};
 const today = () => new Date().toLocaleDateString('es-MX', { timeZone: 'America/Cancun' });
 let cachedVersion = null;
 async function waVersion() {
@@ -63,6 +147,7 @@ const DEFAULTS = {
   autoReplyWelcome: '👋 ¡Hola! Gracias por escribir. En un momento te atendemos. Cuéntanos en qué podemos ayudarte.',
   autoReplyMedia: '📎 ¡Gracias por tu {tipo}! Para atenderte mejor, ¿me lo escribes en un mensajito? Así te respondo volando 🙌',
   autoReplyRules: [],
+  autoReplyFallback: '',
   knowledgeFile: '',
   tgBridgeEnabled: false,
   tgBot: '',
@@ -95,7 +180,7 @@ class Session {
     this.registered = false; this.lastError = ''; this.needsRelink = false;
     this.connecting = false; this.retryTimer = null; this.retries = 0; this.stopped = false;
     this.groupList = []; this.recent = new Map(); this.warnings = new Map(); this.logs = [];
-    this.greeted = new Map(); this.lastAuto = new Map(); this.rudeWarned = new Map();
+    this.greeted = new Map(); this.lastAuto = new Map(); this.rudeWarned = new Map(); this.topics = new Map();
     this.lastSent = Date.now(); this.sendingAvisos = false; this.bcRunning = false;
   }
 
@@ -175,6 +260,7 @@ class Session {
           const code = Number(err?.output?.statusCode ?? err?.statusCode ?? 0);
           this.sock = null; this.qr = ''; this.connection = 'Desconectado';
           this.lastError = `${code || ''} ${err?.message || ''}`.trim();
+          if (!this.stopped) this.log(`Conexión cerrada. Código: ${code || '?'} · ${err?.message || 'sin detalle'}`);
           if (this.stopped) return;
           if ([401, 403, 440].includes(code)) {
             // Sesión cerrada, número baneado o sesión abierta en otro lado: hay que volver a vincular.
@@ -510,17 +596,24 @@ class Session {
         }
       } finally { this.tgBusy.delete(jid); }
     }
-    if (!reply && text) {                                    // 1) palabra clave (aplica en privado y en grupo)
-      const low = norm(text);
-      const rule = [...(c.autoReplyRules || []), ...this.knowledge()].find(r => r.match &&
-        String(r.match).split(/[,|]/).map(t => norm(t.trim())).filter(Boolean).some(t => matchTerm(low, t)));
-      if (rule) reply = rule.reply;
+    if (!reply && text) {                                    // 1) palabra clave (exacta, sinónimos, errores de escritura y tema de la plática)
+      this.topics = this.topics || new Map();
+      const tp = this.topics.get(flKey);
+      const ctx = tp && Date.now() - tp.at < 10 * 60000 ? tp.words : [];
+      const rule = findRule([...(c.autoReplyRules || []), ...this.knowledge()], text, ctx);
+      if (rule) {
+        reply = rule.reply;
+        const tw = topicWordsOf(rule);
+        if (tw.length) this.topics.set(flKey, { words: tw, at: Date.now() });
+        if (this.topics.size > 2000) { const cut = Date.now() - 10 * 60000; for (const [k, v] of this.topics) if (v.at < cut) this.topics.delete(k); }
+      }
     }
     if (!reply && isPrivate && kind && !text) reply = c.autoReplyMedia || null;  // 2) foto/audio: solo en privado
     if (!reply && isPrivate) {                               // 3) bienvenida: solo en privado (con descanso)
       const cd = Math.max(0, Number(c.autoReplyCooldownMin) || 0) * 60000;
       if (now - (this.greeted.get(jid) || 0) >= cd) { reply = (isOwner && c.ownerWelcome) ? c.ownerWelcome : c.autoReplyWelcome; this.greeted.set(jid, now); }
     }
+    if (!reply && isPrivate && text && c.autoReplyFallback) reply = c.autoReplyFallback;  // no entendió: ofrece opciones
     if (!reply && isGroup) {                                 // lo mencionaron pero sin palabra clave
       if (!/\?|\¿/.test(text)) return;                        // si no es una pregunta (un "no", "ok"...), no responde
       reply = c.autoReplyGroupHint || '👋 ¿En qué te ayudo?';  // si es pregunta, un mensaje corto
