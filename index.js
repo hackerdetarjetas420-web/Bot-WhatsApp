@@ -286,6 +286,8 @@ app.get('/s/:id', (req, res) => {
     <textarea name="autoReplyWelcome" rows="3">${esc(c.autoReplyWelcome)}</textarea>
     <label>Mensaje para el DUEÑO (cuando escribe un número de "admin": se presenta en vez de vender)</label>
     <textarea name="ownerWelcome" rows="3">${esc(c.ownerWelcome || '')}</textarea>
+    <label>Si no entiende el mensaje (ej. menú de opciones: 1 Precios, 2 Horarios, 3 Ubicación)</label>
+    <textarea name="autoReplyFallback" rows="2">${esc(c.autoReplyFallback || '')}</textarea>
     <label>Respuesta cuando mandan una foto, audio o archivo</label>
     <textarea name="autoReplyMedia" rows="2">${esc(c.autoReplyMedia)}</textarea>
     <label>Respuestas por palabra clave (una por línea: <b>palabra = respuesta</b>)</label>
@@ -426,6 +428,7 @@ app.post('/s/:id/save', (req, res) => {
   c.autoReplyGroupHint = String(b.autoReplyGroupHint || '');
   c.autoReplyWelcome = String(b.autoReplyWelcome || '');
   c.ownerWelcome = String(b.ownerWelcome || '');
+  c.autoReplyFallback = String(b.autoReplyFallback || '');
   c.autoReplyMedia = String(b.autoReplyMedia || '');
   c.autoReplyCooldownMin = Math.max(0, Number(b.autoReplyCooldownMin) || 0);
   c.knowledgeFile = String(b.knowledgeFile || '').trim();
