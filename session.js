@@ -174,8 +174,10 @@ class Session {
     this.authDir = path.join(dir, 'auth');
     this.cfgFile = path.join(dir, 'config.json');
     this.bcFile = path.join(dir, 'broadcast.json');
+    this.msgFile = path.join(dir, 'mensajes.json');
     this.config = { ...DEFAULTS, ...readJson(this.cfgFile, {}) };
     this.broadcast = { ...emptyBroadcast(), ...readJson(this.bcFile, {}) };
+    this.msgLog = (() => { const v = readJson(this.msgFile, []); return Array.isArray(v) ? v : []; })();
     this.sock = null; this.connection = 'Desconectado'; this.qr = ''; this.pairingCode = '';
     this.registered = false; this.lastError = ''; this.needsRelink = false;
     this.connecting = false; this.retryTimer = null; this.retries = 0; this.stopped = false;
@@ -192,6 +194,14 @@ class Session {
     this.logs = this.logs.slice(0, 80);
     console.info(`[${this.config.name || this.id}] ${s}`);
   }
+  // Registro de mensajes: guarda qué preguntó el cliente y qué contestó el bot (para revisarlo en el panel).
+  recordMsg(who, q, a) {
+    if (this.deleted) return;
+    this.msgLog.unshift({ at: Date.now(), who: String(who || ''), q: String(q || '').slice(0, 500), a: String(a || '').slice(0, 1000) });
+    if (this.msgLog.length > 200) this.msgLog = this.msgLog.slice(0, 200);
+    try { fs.writeFileSync(this.msgFile, JSON.stringify(this.msgLog)); } catch (e) { console.error(`[${this.id}] No se pudo guardar el registro de mensajes: ${e.message}`); }
+  }
+  clearMsgLog() { this.msgLog = []; try { fs.writeFileSync(this.msgFile, '[]'); } catch {} }
   get label() { return this.config.name || this.config.phone || this.id; }
   get expired() { return this.config.expiresAt > 0 && Date.now() > this.config.expiresAt; }
   get rentalOk() { return this.config.active && !this.expired; }
@@ -639,6 +649,7 @@ class Session {
       await this.showTyping(jid, name, 'recording');          // muestra "grabando audio..."
       await this.sock.sendMessage(jid, { audio: fs.readFileSync(fp), mimetype: mp3 ? 'audio/mpeg' : 'audio/ogg; codecs=opus', ptt: true });
       this.log('Audio (' + name + ') enviado a ' + who + '.');
+      this.recordMsg(who, text || ('[' + tipo + ']'), reply);
       return;
     }
     const vm = fromTg ? null : /^video:/i.exec(reply);                       // respuesta tipo video:nombre.mp4  (o  video:nombre.mp4 | texto)
@@ -653,11 +664,13 @@ class Session {
       await this.showTyping(jid, caption || 'video', 'recording');  // muestra "grabando video..."
       await this.sock.sendMessage(jid, { video: fs.readFileSync(fp), mimetype: 'video/mp4', caption: caption || undefined });
       this.log('Video (' + name + ') enviado a ' + who + '.');
+      this.recordMsg(who, text || ('[' + tipo + ']'), reply);
       return;
     }
     await this.showTyping(jid, reply);                        // muestra "escribiendo..." antes del texto
     await this.sock.sendMessage(jid, { text: String(reply) });
     this.log('Respuesta automática enviada a ' + who + '.');
+    this.recordMsg(who, text || ('[' + tipo + ']'), reply);
   }
 
   // ---- puente de Telegram ----
