@@ -389,6 +389,14 @@ app.get('/s/:id', (req, res) => {
 
   <section><h2>Actividad reciente</h2><div class="log">${esc(s.logs.join('\n')) || 'Sin actividad todavía.'}</div></section>
 
+  <section><h2>Registro de mensajes</h2>
+    <p><small>Lo que te preguntan los clientes y lo que contestó el bot. Útil para ver qué conviene responder mejor.</small></p>
+    ${(s.msgLog && s.msgLog.length)
+      ? `<div class="log">${esc(s.msgLog.slice(0, 40).map(x => '[' + new Date(x.at).toLocaleString('es-MX', { timeZone: 'America/Cancun', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '] +' + x.who + '\n❓ ' + x.q + '\n💬 ' + x.a).join('\n\n──────────\n\n'))}</div>
+    <form method="post" action="/s/${s.id}/mensajes/clear" onsubmit="return confirm('¿Vaciar el registro de mensajes de este número?')" style="margin-top:12px"><button class="ghost">Vaciar registro</button></form>`
+      : '<p><small>Todavía no hay mensajes registrados. Aparecerán aquí cuando el bot empiece a responder.</small></p>'}
+  </section>
+
   <section><h2>Eliminar número</h2>
     <p><small>Desvincula el número y borra su configuración del bot. No se puede deshacer.</small></p>
     <form method="post" action="/s/${s.id}/delete" onsubmit="return confirm('¿Eliminar ${esc(s.label).replace(/'/g, '')} del bot? No se puede deshacer.')"><button class="danger">Eliminar número</button></form>
@@ -521,6 +529,8 @@ app.post('/s/:id/delete', async (req, res) => {
   console.info(`[${s.label}] Número eliminado del bot.`);
   res.redirect('/');
 });
+
+app.post('/s/:id/mensajes/clear', (req, res) => { const s = get(req, res); if (!s) return; s.clearMsgLog(); s.log('Registro de mensajes vaciado.'); res.redirect('/s/' + s.id); });
 
 // ---- Puente de Telegram (cuenta de usuario): login y estado ----
 app.post('/tg/send-code', async (req, res) => {
